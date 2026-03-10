@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from 'next-auth'
+import type { UserRole } from '@prisma/client'
 
 /**
  * Lightweight auth config for middleware (no Prisma/bcrypt imports).
@@ -25,6 +26,11 @@ export const authConfig = {
       }
       return token
     },
-    // session callback is in auth.ts where UserRole type is available
+    async session({ session, token }) {
+      session.user.id = token.id as string
+      session.user.role = token.role as UserRole
+      session.user.organizationId = (token.organizationId as string) ?? null
+      return session
+    },
   },
 } satisfies NextAuthConfig
