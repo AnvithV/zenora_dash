@@ -5,7 +5,7 @@ import { useUser, useUpdateUser, useSendEmail } from '@/hooks/use-users'
 import { useSendMessage } from '@/hooks/use-messages'
 import { useUserDocuments, useCreateUserDocument, useDeleteUserDocument } from '@/hooks/use-user-documents'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Building2, FileText, FileUp, Wrench, Mail, Phone, Calendar, Clock, Shield, UserCheck, UserX, MessageSquare, Trash2, Download, Upload } from 'lucide-react'
+import { ArrowLeft, Building2, FileText, FileUp, Wrench, Mail, Phone, Calendar, Clock, Shield, UserCheck, UserX, MessageSquare, Trash2, Download, Upload, Pencil, Check, X } from 'lucide-react'
 import { formatDate, getInitials } from '@/lib/utils'
 import { getRoleLabel } from '@/lib/auth-utils'
 import { StatusBadge } from '@/components/shared/status-badge'
@@ -54,6 +54,12 @@ export default function UserDetailPage() {
 
   // Document delete confirmation state
   const [deleteDocId, setDeleteDocId] = useState<string | null>(null)
+
+  // Profile editing state
+  const [editingProfile, setEditingProfile] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editPhone, setEditPhone] = useState('')
 
   if (isLoading) return <LoadingSkeleton />
 
@@ -156,6 +162,35 @@ export default function UserDetailPage() {
     })
   }
 
+  const startEditingProfile = () => {
+    setEditName(user.name ?? '')
+    setEditEmail(user.email)
+    setEditPhone(user.phone ?? '')
+    setEditingProfile(true)
+  }
+
+  const handleSaveProfile = () => {
+    const changes: Record<string, string> = {}
+    if (editName.trim() !== (user.name ?? '')) changes.name = editName.trim()
+    if (editEmail.trim() !== user.email) changes.email = editEmail.trim()
+    if (editPhone.trim() !== (user.phone ?? '')) changes.phone = editPhone.trim()
+
+    if (Object.keys(changes).length === 0) {
+      setEditingProfile(false)
+      return
+    }
+
+    updateUser.mutate(
+      { id, data: changes },
+      {
+        onSuccess: () => {
+          setEditingProfile(false)
+          toast({ title: 'Profile updated', description: 'User profile has been saved.' })
+        },
+      },
+    )
+  }
+
   const handleSendEmail = () => {
     if (!emailSubject.trim() || !emailBody.trim()) return
     sendEmail.mutate(
@@ -225,16 +260,50 @@ export default function UserDetailPage() {
         <div className="space-y-6 lg:col-span-2">
           {/* Profile Info */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">Profile Information</CardTitle>
+              {!editingProfile ? (
+                <Button variant="ghost" size="sm" className="gap-2" onClick={startEditingProfile}>
+                  <Pencil className="h-4 w-4" />
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="gap-1 text-green-600 hover:text-green-700" onClick={handleSaveProfile} disabled={updateUser.isPending}>
+                    <Check className="h-4 w-4" />
+                    {updateUser.isPending ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button variant="ghost" size="sm" className="gap-1" onClick={() => setEditingProfile(false)} disabled={updateUser.isPending}>
+                    <X className="h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
-              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <InfoRow icon={Mail} label="Email" value={user.email} />
-                <InfoRow icon={Phone} label="Phone" value={user.phone ?? 'Not provided'} />
-                <InfoRow icon={Calendar} label="Joined" value={formatDate(user.createdAt)} />
-                <InfoRow icon={Clock} label="Last Updated" value={formatDate(user.updatedAt)} />
-              </dl>
+              {editingProfile ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="edit-name">Name</Label>
+                    <Input id="edit-name" value={editName} onChange={(e) => setEditName(e.target.value)} className="mt-1.5" />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input id="edit-email" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="mt-1.5" />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-phone">Phone</Label>
+                    <Input id="edit-phone" type="tel" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Not provided" className="mt-1.5" />
+                  </div>
+                </div>
+              ) : (
+                <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <InfoRow icon={Mail} label="Email" value={user.email} />
+                  <InfoRow icon={Phone} label="Phone" value={user.phone ?? 'Not provided'} />
+                  <InfoRow icon={Calendar} label="Joined" value={formatDate(user.createdAt)} />
+                  <InfoRow icon={Clock} label="Last Updated" value={formatDate(user.updatedAt)} />
+                </dl>
+              )}
 
               {user.memberships?.length > 0 && (
                 <>
