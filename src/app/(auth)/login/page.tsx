@@ -17,7 +17,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') ?? '/dashboard/overview'
+  const callbackUrl = searchParams.get('callbackUrl') ?? '/'
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState<LoginInput>({ email: '', password: '' })

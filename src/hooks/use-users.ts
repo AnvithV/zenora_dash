@@ -35,3 +35,10 @@ export function useDeleteUser() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   })
 }
+
+export function useSendEmail() {
+  return useMutation({
+    mutationFn: (data: { to: string; subject: string; body: string }) =>
+      mutateApi('/api/admin/email', 'POST', data),
+  })
+}

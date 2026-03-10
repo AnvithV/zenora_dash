@@ -37,6 +37,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Get current user data before update for comparison
     const existingUser = await userService.getById(id)
 
+    // PLATFORM_ADMIN role cannot be granted or revoked through the UI
+    if (data.role === 'PLATFORM_ADMIN' || (data.role && existingUser.role === 'PLATFORM_ADMIN')) {
+      return NextResponse.json({ success: false, error: 'Platform Admin role can only be changed directly in the database' }, { status: 403 })
+    }
+
     const user = await userService.update(id, data, orgId, admin.id)
 
     // Send notifications for role/status changes

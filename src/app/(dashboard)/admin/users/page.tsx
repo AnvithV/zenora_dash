@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useUsers, useUpdateUser } from '@/hooks/use-users'
+import { useUsers, useUpdateUser, useSendEmail } from '@/hooks/use-users'
+import { useSendMessage } from '@/hooks/use-messages'
 import { useRouter } from 'next/navigation'
-import { Search, Users, UserCheck, UserX, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Users, UserCheck, UserX, AlertCircle, ChevronLeft, ChevronRight, MessageSquare, Mail } from 'lucide-react'
 import { formatDate, getInitials } from '@/lib/utils'
 import { getRoleLabel } from '@/lib/auth-utils'
 import { PageHeader } from '@/components/shared/page-header'
@@ -11,9 +12,11 @@ import { StatusBadge } from '@/components/shared/status-badge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 export default function UsersPage() {
   const router = useRouter()
@@ -21,6 +24,13 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [page, setPage] = useState(1)
+
+  // Dialogs
+  const [messageTarget, setMessageTarget] = useState<{ id: string; name: string } | null>(null)
+  const [emailTarget, setEmailTarget] = useState<{ email: string; name: string } | null>(null)
+  const [messageContent, setMessageContent] = useState('')
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
 
   const { data, isLoading } = useUsers({
     search,
@@ -31,6 +41,8 @@ export default function UsersPage() {
   })
   const { data: pendingData } = useUsers({ status: 'PENDING', pageSize: 1 })
   const updateUser = useUpdateUser()
+  const sendMessage = useSendMessage()
+  const sendEmail = useSendEmail()
 
   const users = data?.items ?? []
   const total = data?.total ?? 0
@@ -45,6 +57,33 @@ export default function UsersPage() {
   const handleReject = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     updateUser.mutate({ id, data: { status: 'SUSPENDED' } })
+  }
+
+  const handleSendMessage = () => {
+    if (!messageTarget || !messageContent.trim()) return
+    sendMessage.mutate(
+      { recipientId: messageTarget.id, content: messageContent },
+      {
+        onSuccess: () => {
+          setMessageTarget(null)
+          setMessageContent('')
+        },
+      },
+    )
+  }
+
+  const handleSendEmail = () => {
+    if (!emailTarget || !emailSubject.trim() || !emailBody.trim()) return
+    sendEmail.mutate(
+      { to: emailTarget.email, subject: emailSubject, body: emailBody },
+      {
+        onSuccess: () => {
+          setEmailTarget(null)
+          setEmailSubject('')
+          setEmailBody('')
+        },
+      },
+    )
   }
 
   const roleBadgeVariant = (role: string) => {
@@ -202,30 +241,56 @@ export default function UsersPage() {
                     {formatDate(user.createdAt as string)}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {user.status === 'PENDING' && (
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 gap-1 text-green-700 hover:bg-green-50 hover:text-green-800"
-                          onClick={(e) => handleApprove(user.id as string, e)}
-                          disabled={updateUser.isPending}
-                        >
-                          <UserCheck className="h-3.5 w-3.5" />
-                          Approve
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 gap-1 text-red-700 hover:bg-red-50 hover:text-red-800"
-                          onClick={(e) => handleReject(user.id as string, e)}
-                          disabled={updateUser.isPending}
-                        >
-                          <UserX className="h-3.5 w-3.5" />
-                          Reject
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-slate-500 hover:text-violet-700"
+                        title="Send Message"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setMessageTarget({ id: user.id as string, name: (user.name as string) ?? 'Unnamed' })
+                        }}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-slate-500 hover:text-violet-700"
+                        title="Send Email"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEmailTarget({ email: user.email as string, name: (user.name as string) ?? 'Unnamed' })
+                        }}
+                      >
+                        <Mail className="h-4 w-4" />
+                      </Button>
+                      {user.status === 'PENDING' && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1 text-green-700 hover:bg-green-50 hover:text-green-800"
+                            onClick={(e) => handleApprove(user.id as string, e)}
+                            disabled={updateUser.isPending}
+                          >
+                            <UserCheck className="h-3.5 w-3.5" />
+                            Approve
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1 text-red-700 hover:bg-red-50 hover:text-red-800"
+                            onClick={(e) => handleReject(user.id as string, e)}
+                            disabled={updateUser.isPending}
+                          >
+                            <UserX className="h-3.5 w-3.5" />
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -262,6 +327,70 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      {/* Message Dialog */}
+      <Dialog open={!!messageTarget} onOpenChange={(open) => { if (!open) { setMessageTarget(null); setMessageContent('') } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Message {messageTarget?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Type your message..."
+              value={messageContent}
+              onChange={(e) => setMessageContent(e.target.value)}
+              rows={4}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setMessageTarget(null); setMessageContent('') }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={!messageContent.trim() || sendMessage.isPending}
+              >
+                {sendMessage.isPending ? 'Sending...' : 'Send Message'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Dialog */}
+      <Dialog open={!!emailTarget} onOpenChange={(open) => { if (!open) { setEmailTarget(null); setEmailSubject(''); setEmailBody('') } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email {emailTarget?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="mb-1 text-sm text-slate-500">To: {emailTarget?.email}</p>
+            </div>
+            <Input
+              placeholder="Subject"
+              value={emailSubject}
+              onChange={(e) => setEmailSubject(e.target.value)}
+            />
+            <Textarea
+              placeholder="Email body..."
+              value={emailBody}
+              onChange={(e) => setEmailBody(e.target.value)}
+              rows={6}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setEmailTarget(null); setEmailSubject(''); setEmailBody('') }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSendEmail}
+                disabled={!emailSubject.trim() || !emailBody.trim() || sendEmail.isPending}
+              >
+                {sendEmail.isPending ? 'Sending...' : 'Send Email'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

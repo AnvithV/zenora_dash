@@ -1,25 +1,39 @@
 'use client'
 
-import { useUser, useUpdateUser } from '@/hooks/use-users'
+import { useState } from 'react'
+import { useUser, useUpdateUser, useSendEmail } from '@/hooks/use-users'
+import { useSendMessage } from '@/hooks/use-messages'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Building2, FileText, Wrench, Mail, Phone, Calendar, Clock, Shield, UserCheck, UserX } from 'lucide-react'
+import { ArrowLeft, Building2, FileText, Wrench, Mail, Phone, Calendar, Clock, Shield, UserCheck, UserX, MessageSquare } from 'lucide-react'
 import { formatDate, getInitials } from '@/lib/utils'
 import { getRoleLabel } from '@/lib/auth-utils'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { PageHeader } from '@/components/shared/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 export default function UserDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const { data, isLoading } = useUser(id)
   const updateUser = useUpdateUser()
+  const sendMessage = useSendMessage()
+  const sendEmail = useSendEmail()
+
+  // Dialog state
+  const [showMessageDialog, setShowMessageDialog] = useState(false)
+  const [showEmailDialog, setShowEmailDialog] = useState(false)
+  const [messageContent, setMessageContent] = useState('')
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
 
   if (isLoading) return <LoadingSkeleton />
 
@@ -54,6 +68,33 @@ export default function UserDetailPage() {
     }
   }
 
+  const handleSendMessage = () => {
+    if (!messageContent.trim()) return
+    sendMessage.mutate(
+      { recipientId: id, content: messageContent },
+      {
+        onSuccess: () => {
+          setShowMessageDialog(false)
+          setMessageContent('')
+        },
+      },
+    )
+  }
+
+  const handleSendEmail = () => {
+    if (!emailSubject.trim() || !emailBody.trim()) return
+    sendEmail.mutate(
+      { to: user.email, subject: emailSubject, body: emailBody },
+      {
+        onSuccess: () => {
+          setShowEmailDialog(false)
+          setEmailSubject('')
+          setEmailBody('')
+        },
+      },
+    )
+  }
+
   return (
     <div className="animate-fade-in space-y-6">
       {/* Back + Header */}
@@ -80,6 +121,26 @@ export default function UserDetailPage() {
               <StatusBadge status={user.status} />
             </div>
             <p className="mt-0.5 text-sm text-slate-500">{user.email}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setShowMessageDialog(true)}
+            >
+              <MessageSquare className="h-4 w-4" />
+              Send Message
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setShowEmailDialog(true)}
+            >
+              <Mail className="h-4 w-4" />
+              Send Email
+            </Button>
           </div>
         </div>
       </div>
@@ -127,19 +188,24 @@ export default function UserDetailPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">Role</label>
-                  <Select
-                    value={user.role}
-                    onValueChange={(value) => updateUser.mutate({ id, data: { role: value } })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PLATFORM_ADMIN">Platform Admin</SelectItem>
-                      <SelectItem value="LANDLORD">Landlord</SelectItem>
-                      <SelectItem value="TENANT">Tenant</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {user.role === 'PLATFORM_ADMIN' ? (
+                    <div className="flex h-10 items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500">
+                      Platform Admin
+                    </div>
+                  ) : (
+                    <Select
+                      value={user.role}
+                      onValueChange={(value) => updateUser.mutate({ id, data: { role: value } })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="LANDLORD">Landlord</SelectItem>
+                        <SelectItem value="TENANT">Tenant</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">Status</label>
@@ -325,6 +391,70 @@ export default function UserDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Message Dialog */}
+      <Dialog open={showMessageDialog} onOpenChange={(open) => { if (!open) { setShowMessageDialog(false); setMessageContent('') } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Message {user.name ?? 'Unnamed User'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Type your message..."
+              value={messageContent}
+              onChange={(e) => setMessageContent(e.target.value)}
+              rows={4}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setShowMessageDialog(false); setMessageContent('') }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={!messageContent.trim() || sendMessage.isPending}
+              >
+                {sendMessage.isPending ? 'Sending...' : 'Send Message'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={(open) => { if (!open) { setShowEmailDialog(false); setEmailSubject(''); setEmailBody('') } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email {user.name ?? 'Unnamed User'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="mb-1 text-sm text-slate-500">To: {user.email}</p>
+            </div>
+            <Input
+              placeholder="Subject"
+              value={emailSubject}
+              onChange={(e) => setEmailSubject(e.target.value)}
+            />
+            <Textarea
+              placeholder="Email body..."
+              value={emailBody}
+              onChange={(e) => setEmailBody(e.target.value)}
+              rows={6}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setShowEmailDialog(false); setEmailSubject(''); setEmailBody('') }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSendEmail}
+                disabled={!emailSubject.trim() || !emailBody.trim() || sendEmail.isPending}
+              >
+                {sendEmail.isPending ? 'Sending...' : 'Send Email'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
