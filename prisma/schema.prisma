@@ -1,0 +1,578 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────
+
+enum UserRole {
+  PLATFORM_ADMIN
+  LANDLORD
+  TENANT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum PropertyType {
+  RESIDENTIAL
+  COMMERCIAL
+  MIXED_USE
+  INDUSTRIAL
+}
+
+enum PropertyStatus {
+  ACTIVE
+  INACTIVE
+  UNDER_CONSTRUCTION
+}
+
+enum UnitStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+  RESERVED
+}
+
+enum LeaseStatus {
+  DRAFT
+  PENDING
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  RENEWED
+}
+
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MaintenanceCategory {
+  PLUMBING
+  ELECTRICAL
+  HVAC
+  APPLIANCE
+  STRUCTURAL
+  PEST_CONTROL
+  LANDSCAPING
+  GENERAL
+  OTHER
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum DocumentType {
+  LEASE_AGREEMENT
+  ID_DOCUMENT
+  PROOF_OF_INCOME
+  INSURANCE
+  INSPECTION_REPORT
+  MAINTENANCE_PHOTO
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+// ─── Auth.js Models ─────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── Core Models ────────────────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  memberships  OrganizationMembership[]
+  properties   Property[]
+  leases       Lease[]
+  maintenance  MaintenanceRequest[]
+  documents    Document[]
+  announcements Announcement[]
+  applications Application[]
+  auditEvents  AuditEvent[]
+  payments     Payment[]
+  messages      Message[]
+  notifications Notification[]
+  userDocuments UserDocument[]
+
+  @@map("organizations")
+}
+
+model OrganizationMembership {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  organizationId String   @map("organization_id")
+  role           UserRole @default(TENANT)
+  joinedAt       DateTime @default(now()) @map("joined_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@map("organization_memberships")
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String     @unique
+  emailVerified DateTime?  @map("email_verified")
+  image         String?
+  password      String?
+  phone         String?
+  role          UserRole   @default(TENANT)
+  status        UserStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  accounts              Account[]
+  sessions              Session[]
+  memberships           OrganizationMembership[]
+  ownedProperties       Property[]             @relation("PropertyOwner")
+  managedProperties     Property[]             @relation("PropertyManager")
+  leases                Lease[]                @relation("LeaseTenant")
+  maintenanceRequests   MaintenanceRequest[]   @relation("MaintenanceRequester")
+  assignedMaintenance   MaintenanceRequest[]   @relation("MaintenanceAssignee")
+  maintenanceComments   MaintenanceComment[]
+  applications          Application[]
+  documents             Document[]
+  announcements         Announcement[]
+  auditEvents           AuditEvent[]
+  sentMessages          Message[]              @relation("SentMessages")
+  receivedMessages      Message[]              @relation("ReceivedMessages")
+  notifications         Notification[]
+  userDocuments         UserDocument[]
+  uploadedUserDocuments UserDocument[]          @relation("UploadedUserDocuments")
+
+  @@map("users")
+}
+
+// ─── Property Models ────────────────────────────────────────────────
+
+model Property {
+  id             String         @id @default(cuid())
+  name           String
+  address        String
+  city           String
+  state          String
+  zipCode        String         @map("zip_code")
+  country        String         @default("US")
+  type           PropertyType   @default(RESIDENTIAL)
+  status         PropertyStatus @default(ACTIVE)
+  description    String?        @db.Text
+  yearBuilt      Int?           @map("year_built")
+  totalUnits     Int            @default(0) @map("total_units")
+  organizationId String         @map("organization_id")
+  ownerId        String?        @map("owner_id")
+  managerId      String?        @map("manager_id")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner        User?        @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  manager      User?        @relation("PropertyManager", fields: [managerId], references: [id], onDelete: SetNull)
+
+  units         Unit[]
+  maintenance   MaintenanceRequest[]
+  documents     Document[]
+  announcements Announcement[]
+  applications  Application[]
+
+  @@index([organizationId])
+  @@index([ownerId])
+  @@index([managerId])
+  @@map("properties")
+}
+
+model Unit {
+  id         String     @id @default(cuid())
+  number     String
+  floor      Int?
+  bedrooms   Int        @default(1)
+  bathrooms  Float      @default(1)
+  sqft       Int?
+  rent       Float
+  deposit    Float?
+  status     UnitStatus @default(AVAILABLE)
+  features   String?    @db.Text
+  propertyId String     @map("property_id")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  property     Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  leases       Lease[]
+  maintenance  MaintenanceRequest[]
+  applications Application[]
+
+  @@unique([propertyId, number])
+  @@index([propertyId])
+  @@index([status])
+  @@map("units")
+}
+
+// ─── Lease Models ───────────────────────────────────────────────────
+
+model Lease {
+  id              String      @id @default(cuid())
+  unitId          String      @map("unit_id")
+  tenantId        String      @map("tenant_id")
+  organizationId  String      @map("organization_id")
+  startDate       DateTime    @map("start_date")
+  endDate         DateTime    @map("end_date")
+  monthlyRent     Float       @map("monthly_rent")
+  securityDeposit Float?      @map("security_deposit")
+  status          LeaseStatus @default(DRAFT)
+  terms           String?     @db.Text
+  previousLeaseId String?     @unique @map("previous_lease_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  unit          Unit          @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  tenant        User          @relation("LeaseTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  previousLease Lease?        @relation("LeaseRenewal", fields: [previousLeaseId], references: [id], onDelete: SetNull)
+  renewedLease  Lease?        @relation("LeaseRenewal")
+  documents     Document[]
+  payments      Payment[]
+
+  @@index([unitId])
+  @@index([tenantId])
+  @@index([organizationId])
+  @@index([status])
+  @@map("leases")
+}
+
+// ─── Maintenance Models ─────────────────────────────────────────────
+
+model MaintenanceRequest {
+  id             String              @id @default(cuid())
+  title          String
+  description    String              @db.Text
+  status         MaintenanceStatus   @default(OPEN)
+  priority       MaintenancePriority @default(MEDIUM)
+  category       MaintenanceCategory @default(GENERAL)
+  unitId         String              @map("unit_id")
+  propertyId     String              @map("property_id")
+  organizationId String              @map("organization_id")
+  requesterId    String              @map("requester_id")
+  assigneeId     String?             @map("assignee_id")
+  resolvedAt     DateTime?           @map("resolved_at")
+  closedAt       DateTime?           @map("closed_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  unit         Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  property     Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requester    User         @relation("MaintenanceRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  assignee     User?        @relation("MaintenanceAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  comments  MaintenanceComment[]
+  documents Document[]
+
+  @@index([organizationId])
+  @@index([propertyId])
+  @@index([unitId])
+  @@index([requesterId])
+  @@index([status])
+  @@index([priority])
+  @@map("maintenance_requests")
+}
+
+model MaintenanceComment {
+  id           String   @id @default(cuid())
+  content      String   @db.Text
+  isInternal   Boolean  @default(false) @map("is_internal")
+  requestId    String   @map("request_id")
+  authorId     String   @map("author_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  request MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author  User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@map("maintenance_comments")
+}
+
+// ─── Application Model ──────────────────────────────────────────────
+
+model Application {
+  id             String            @id @default(cuid())
+  unitId         String            @map("unit_id")
+  propertyId     String            @map("property_id")
+  organizationId String            @map("organization_id")
+  applicantId    String            @map("applicant_id")
+  status         ApplicationStatus @default(SUBMITTED)
+  moveInDate     DateTime?         @map("move_in_date")
+  message        String?           @db.Text
+  reviewNotes    String?           @map("review_notes") @db.Text
+  reviewedAt     DateTime?         @map("reviewed_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  unit         Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  property     Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  applicant    User         @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  documents    Document[]
+
+  @@index([organizationId])
+  @@index([propertyId])
+  @@index([applicantId])
+  @@index([status])
+  @@map("applications")
+}
+
+// ─── Document Model ─────────────────────────────────────────────────
+
+model Document {
+  id             String       @id @default(cuid())
+  name           String
+  fileName       String       @map("file_name")
+  fileSize       Int          @map("file_size")
+  mimeType       String       @map("mime_type")
+  url            String
+  type           DocumentType @default(OTHER)
+  organizationId String       @map("organization_id")
+  uploadedById   String       @map("uploaded_by_id")
+
+  // Polymorphic relations (nullable FKs)
+  propertyId    String?              @map("property_id")
+  leaseId       String?              @map("lease_id")
+  requestId     String?              @map("request_id")
+  applicationId String?              @map("application_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedBy   User                @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  property     Property?           @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  lease        Lease?              @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+  request      MaintenanceRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  application  Application?        @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([propertyId])
+  @@index([leaseId])
+  @@index([requestId])
+  @@index([applicationId])
+  @@map("documents")
+}
+
+// ─── Announcement Model ─────────────────────────────────────────────
+
+model Announcement {
+  id             String     @id @default(cuid())
+  title          String
+  content        String     @db.Text
+  priority       String     @default("normal")
+  targetRoles    UserRole[]  @map("target_roles")
+  propertyId     String?    @map("property_id")
+  organizationId String     @map("organization_id")
+  authorId       String     @map("author_id")
+  publishedAt    DateTime?  @map("published_at")
+  expiresAt      DateTime?  @map("expires_at")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  property     Property?    @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([propertyId])
+  @@map("announcements")
+}
+
+// ─── Audit Model ────────────────────────────────────────────────────
+
+model AuditEvent {
+  id             String   @id @default(cuid())
+  action         String
+  entityType     String   @map("entity_type")
+  entityId       String   @map("entity_id")
+  userId         String   @map("user_id")
+  organizationId String   @map("organization_id")
+  metadata       Json?
+  ipAddress      String?  @map("ip_address")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_events")
+}
+
+// ─── Payment Model (future-ready) ──────────────────────────────────
+
+model Payment {
+  id             String        @id @default(cuid())
+  amount         Float
+  status         PaymentStatus @default(PENDING)
+  method         String?
+  transactionId  String?       @unique @map("transaction_id")
+  leaseId        String        @map("lease_id")
+  organizationId String        @map("organization_id")
+  dueDate        DateTime      @map("due_date")
+  paidAt         DateTime?     @map("paid_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  lease        Lease        @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([leaseId])
+  @@index([organizationId])
+  @@index([status])
+  @@map("payments")
+}
+
+// ─── Message Model ─────────────────────────────────────────────────
+
+model Message {
+  id             String   @id @default(cuid())
+  content        String   @db.Text
+  senderId       String   @map("sender_id")
+  recipientId    String   @map("recipient_id")
+  readAt         DateTime? @map("read_at")
+  organizationId String   @map("organization_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  sender       User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient    User         @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([organizationId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// ─── Notification Model ────────────────────────────────────────────
+
+model Notification {
+  id             String   @id @default(cuid())
+  type           String
+  title          String
+  message        String   @db.Text
+  link           String?
+  read           Boolean  @default(false)
+  userId         String   @map("user_id")
+  organizationId String?  @map("organization_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ─── User Document Model ───────────────────────────────────────────
+
+model UserDocument {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?  @db.Text
+  fileName       String   @map("file_name")
+  fileSize       Int      @map("file_size")
+  mimeType       String   @map("mime_type")
+  url            String
+  userId         String   @map("user_id")
+  uploadedById   String   @map("uploaded_by_id")
+  organizationId String   @map("organization_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploadedBy   User         @relation("UploadedUserDocuments", fields: [uploadedById], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([uploadedById])
+  @@index([organizationId])
+  @@map("user_documents")
+}

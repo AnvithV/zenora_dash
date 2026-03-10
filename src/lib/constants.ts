@@ -1,0 +1,20 @@
+export const APP_NAME = 'ZenPortal'
+
+export const ROLES = {
+  PLATFORM_ADMIN: 'PLATFORM_ADMIN',
+  LANDLORD: 'LANDLORD',
+  TENANT: 'TENANT',
+} as const
+
+export const ADMIN_ROLES = [ROLES.PLATFORM_ADMIN, ROLES.LANDLORD] as const
+
+export const PROPERTY_TYPES = ['RESIDENTIAL', 'COMMERCIAL', 'MIXED_USE', 'INDUSTRIAL'] as const
+export const UNIT_STATUSES = ['AVAILABLE', 'OCCUPIED', 'MAINTENANCE', 'RESERVED'] as const
+export const LEASE_STATUSES = ['DRAFT', 'PENDING', 'ACTIVE', 'EXPIRED', 'TERMINATED', 'RENEWED'] as const
+export const MAINTENANCE_STATUSES = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const
+export const MAINTENANCE_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const
+export const APPLICATION_STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'WITHDRAWN'] as const
+
+export const PAGE_SIZE = 10
+export const MAX_PAGE_SIZE = 100
+export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
