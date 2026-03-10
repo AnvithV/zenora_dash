@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cn, formatCurrency, formatDate, formatDateTime, getInitials, slugify } from '@/lib/utils'
+import { cn, formatCurrency, formatDate, formatDateTime, getInitials } from '@/lib/utils'
 
 describe('cn', () => {
   it('merges simple class names', () => {
@@ -114,40 +114,3 @@ describe('getInitials', () => {
   })
 })
 
-describe('slugify', () => {
-  it('converts a simple string to a slug', () => {
-    expect(slugify('Hello World')).toBe('hello-world')
-  })
-
-  it('removes special characters', () => {
-    expect(slugify('Hello, World!')).toBe('hello-world')
-  })
-
-  it('replaces multiple spaces with a single hyphen', () => {
-    expect(slugify('Hello   World')).toBe('hello-world')
-  })
-
-  it('removes leading and trailing hyphens', () => {
-    expect(slugify('  Hello World  ')).toBe('hello-world')
-  })
-
-  it('handles underscores by replacing with hyphens', () => {
-    expect(slugify('hello_world')).toBe('hello-world')
-  })
-
-  it('handles already-slugified text', () => {
-    expect(slugify('hello-world')).toBe('hello-world')
-  })
-
-  it('converts uppercase to lowercase', () => {
-    expect(slugify('HELLO WORLD')).toBe('hello-world')
-  })
-
-  it('handles mixed special characters', () => {
-    expect(slugify('Property #1 - Main St.')).toBe('property-1-main-st')
-  })
-
-  it('handles an empty string', () => {
-    expect(slugify('')).toBe('')
-  })
-})

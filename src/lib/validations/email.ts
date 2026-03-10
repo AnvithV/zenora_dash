@@ -5,5 +5,3 @@ export const sendEmailSchema = z.object({
   subject: z.string().min(1, 'Subject is required').max(200),
   body: z.string().min(1, 'Body is required').max(10000),
 })
-
-export type SendEmailInput = z.infer<typeof sendEmailSchema>

@@ -75,6 +75,8 @@ export const userRepository = {
         memberships: {
           include: { organization: { select: { id: true, name: true } } },
         },
+        assignedLandlord: { select: { id: true, name: true, email: true } },
+        assignedTenants: { select: { id: true, name: true, email: true, status: true } },
         ownedProperties: { select: { id: true, name: true } },
         managedProperties: { select: { id: true, name: true } },
         leases: {

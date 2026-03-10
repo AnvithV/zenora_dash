@@ -28,14 +28,6 @@ export function isPlatformAdmin(role: UserRole): boolean {
   return role === 'PLATFORM_ADMIN'
 }
 
-export function canManageProperty(role: UserRole): boolean {
-  return ['PLATFORM_ADMIN', 'LANDLORD'].includes(role)
-}
-
-export function canViewAdminDashboard(role: UserRole): boolean {
-  return ADMIN_ROLES.includes(role)
-}
-
 export function getRoleLabel(role: UserRole | string): string {
   const labels: Record<string, string> = {
     PLATFORM_ADMIN: 'Platform Admin',

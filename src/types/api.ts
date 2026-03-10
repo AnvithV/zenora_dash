@@ -15,11 +15,3 @@ export type SearchParams = {
 export type QueryParams = PaginationParams & SortParams & SearchParams & {
   [key: string]: string | number | undefined
 }
-
-export type PaginatedResponse<T> = {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
-}

@@ -8,8 +8,6 @@ vi.mock('@/lib/auth', () => ({
 import {
   isAdminRole,
   isPlatformAdmin,
-  canManageProperty,
-  canViewAdminDashboard,
   getRoleLabel,
   getStatusColor,
 } from '@/lib/auth-utils'
@@ -39,34 +37,6 @@ describe('isPlatformAdmin', () => {
 
   it('returns false for TENANT', () => {
     expect(isPlatformAdmin('TENANT')).toBe(false)
-  })
-})
-
-describe('canManageProperty', () => {
-  it('returns true for PLATFORM_ADMIN', () => {
-    expect(canManageProperty('PLATFORM_ADMIN')).toBe(true)
-  })
-
-  it('returns true for LANDLORD', () => {
-    expect(canManageProperty('LANDLORD')).toBe(true)
-  })
-
-  it('returns false for TENANT', () => {
-    expect(canManageProperty('TENANT')).toBe(false)
-  })
-})
-
-describe('canViewAdminDashboard', () => {
-  it('returns true for PLATFORM_ADMIN', () => {
-    expect(canViewAdminDashboard('PLATFORM_ADMIN')).toBe(true)
-  })
-
-  it('returns true for LANDLORD', () => {
-    expect(canViewAdminDashboard('LANDLORD')).toBe(true)
-  })
-
-  it('returns false for TENANT', () => {
-    expect(canViewAdminDashboard('TENANT')).toBe(false)
   })
 })
 

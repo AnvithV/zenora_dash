@@ -1,11 +1,12 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { useUser, useUpdateUser, useSendEmail } from '@/hooks/use-users'
+import { useUser, useUsers, useUpdateUser, useSendEmail } from '@/hooks/use-users'
 import { useSendMessage } from '@/hooks/use-messages'
 import { useUserDocuments, useCreateUserDocument, useDeleteUserDocument } from '@/hooks/use-user-documents'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Building2, FileText, FileUp, Wrench, Mail, Phone, Calendar, Clock, Shield, UserCheck, UserX, MessageSquare, Trash2, Download, Upload, Pencil, Check, X } from 'lucide-react'
+import { ArrowLeft, Building2, FileText, FileUp, Wrench, Mail, Phone, Calendar, Clock, Shield, UserCheck, UserX, MessageSquare, Trash2, Download, Upload, Pencil, Check, X, Users, Link as LinkIcon } from 'lucide-react'
+import Link from 'next/link'
 import { formatDate, getInitials } from '@/lib/utils'
 import { getRoleLabel } from '@/lib/auth-utils'
 import { StatusBadge } from '@/components/shared/status-badge'
@@ -55,6 +56,9 @@ export default function UserDetailPage() {
   // Document delete confirmation state
   const [deleteDocId, setDeleteDocId] = useState<string | null>(null)
 
+  // Landlord assignment state
+  const [selectedLandlordId, setSelectedLandlordId] = useState<string>('')
+
   // Profile editing state
   const [editingProfile, setEditingProfile] = useState(false)
   const [editName, setEditName] = useState('')
@@ -81,6 +85,9 @@ export default function UserDetailPage() {
   const user = data.data
   const isLandlord = user.role === 'LANDLORD'
   const isTenant = user.role === 'TENANT'
+
+  // Fetch landlords list for tenant assignment dropdown
+  const { data: landlordsData } = useUsers({ role: 'LANDLORD', pageSize: 100 })
   const hasLeases = user.leases?.length > 0
   const hasMaintenanceRequests = user.maintenanceRequests?.length > 0
   const hasOwnedProperties = user.ownedProperties?.length > 0
@@ -204,6 +211,43 @@ export default function UserDetailPage() {
       },
     )
   }
+
+  const handleAssignLandlord = () => {
+    if (!selectedLandlordId) return
+    updateUser.mutate(
+      { id, data: { assignedLandlordId: selectedLandlordId } },
+      {
+        onSuccess: () => {
+          setSelectedLandlordId('')
+          toast({ title: 'Landlord assigned', description: 'Tenant has been assigned to the landlord.' })
+        },
+      },
+    )
+  }
+
+  const handleUnassignLandlord = () => {
+    updateUser.mutate(
+      { id, data: { assignedLandlordId: null } },
+      {
+        onSuccess: () => {
+          toast({ title: 'Landlord unassigned', description: 'Tenant has been unassigned from the landlord.' })
+        },
+      },
+    )
+  }
+
+  const handleRemoveTenant = (tenantId: string) => {
+    updateUser.mutate(
+      { id: tenantId, data: { assignedLandlordId: null } },
+      {
+        onSuccess: () => {
+          toast({ title: 'Tenant removed', description: 'Tenant has been unassigned from this landlord.' })
+        },
+      },
+    )
+  }
+
+  const landlords = (landlordsData?.data ?? []) as Array<{ id: string; name: string | null; email: string }>
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -549,6 +593,59 @@ export default function UserDetailPage() {
               </CardContent>
             </Card>
           )}
+          {/* Landlord: Assigned Tenants */}
+          {isLandlord && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Users className="h-4 w-4 text-slate-400" />
+                  Assigned Tenants
+                  {user.assignedTenants?.length > 0 && (
+                    <Badge variant="secondary" className="ml-1">{user.assignedTenants.length}</Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(!user.assignedTenants || user.assignedTenants.length === 0) ? (
+                  <div className="py-6 text-center">
+                    <Users className="mx-auto h-8 w-8 text-slate-300" />
+                    <p className="mt-2 text-sm text-slate-500">No tenants assigned</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {user.assignedTenants.map((tenant: { id: string; name: string | null; email: string; status: string }) => (
+                      <div
+                        key={tenant.id}
+                        className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-3"
+                      >
+                        <div>
+                          <Link
+                            href={`/admin/users/${tenant.id}`}
+                            className="text-sm font-medium text-violet-600 hover:underline"
+                          >
+                            {tenant.name ?? 'Unnamed'}
+                          </Link>
+                          <p className="text-xs text-slate-500">{tenant.email}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <StatusBadge status={tenant.status} />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600"
+                            onClick={() => handleRemoveTenant(tenant.id)}
+                            disabled={updateUser.isPending}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar: Stats */}
@@ -567,6 +664,68 @@ export default function UserDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Assigned Landlord (for tenants) */}
+          {isTenant && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <LinkIcon className="h-4 w-4 text-slate-400" />
+                  Assigned Landlord
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {user.assignedLandlord ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-3">
+                      <div>
+                        <Link
+                          href={`/admin/users/${user.assignedLandlord.id}`}
+                          className="text-sm font-medium text-violet-600 hover:underline"
+                        >
+                          {user.assignedLandlord.name ?? 'Unnamed'}
+                        </Link>
+                        <p className="text-xs text-slate-500">{user.assignedLandlord.email}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:bg-red-50 hover:text-red-600"
+                        onClick={handleUnassignLandlord}
+                        disabled={updateUser.isPending}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-slate-500">Not assigned</p>
+                    <Select value={selectedLandlordId} onValueChange={setSelectedLandlordId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a landlord..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {landlords.map((ll) => (
+                          <SelectItem key={ll.id} value={ll.id}>
+                            {ll.name ?? ll.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      onClick={handleAssignLandlord}
+                      disabled={!selectedLandlordId || updateUser.isPending}
+                    >
+                      {updateUser.isPending ? 'Assigning...' : 'Assign'}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Quick Actions */}
           {user.status === 'PENDING' && (

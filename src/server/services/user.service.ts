@@ -31,42 +31,6 @@ export const userService = {
     return user
   },
 
-  async changeRole(id: string, newRole: UpdateUserInput['role'], organizationId: string, adminId: string) {
-    const existing = await userRepository.findById(id)
-    if (!existing) throw new Error('User not found')
-
-    const user = await userRepository.update(id, { role: newRole })
-
-    await auditRepository.create({
-      action: 'user.role_changed',
-      entityType: 'User',
-      entityId: id,
-      userId: adminId,
-      organizationId,
-      metadata: { oldRole: existing.role, newRole },
-    })
-
-    return user
-  },
-
-  async changeStatus(id: string, newStatus: UpdateUserInput['status'], organizationId: string, adminId: string) {
-    const existing = await userRepository.findById(id)
-    if (!existing) throw new Error('User not found')
-
-    const user = await userRepository.update(id, { status: newStatus })
-
-    await auditRepository.create({
-      action: 'user.status_changed',
-      entityType: 'User',
-      entityId: id,
-      userId: adminId,
-      organizationId,
-      metadata: { oldStatus: existing.status, newStatus },
-    })
-
-    return user
-  },
-
   async delete(id: string, organizationId: string, adminId: string) {
     const existing = await userRepository.findById(id)
     if (!existing) throw new Error('User not found')

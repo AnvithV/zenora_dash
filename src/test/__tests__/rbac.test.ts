@@ -8,8 +8,6 @@ vi.mock('@/lib/auth', () => ({
 import {
   isAdminRole,
   isPlatformAdmin,
-  canManageProperty,
-  canViewAdminDashboard,
   getRoleLabel,
 } from '@/lib/auth-utils'
 
@@ -17,8 +15,6 @@ describe('RBAC - Platform Admin Permissions', () => {
   it('has full admin access', () => {
     expect(isAdminRole('PLATFORM_ADMIN')).toBe(true)
     expect(isPlatformAdmin('PLATFORM_ADMIN')).toBe(true)
-    expect(canManageProperty('PLATFORM_ADMIN')).toBe(true)
-    expect(canViewAdminDashboard('PLATFORM_ADMIN')).toBe(true)
   })
 
   it('is recognized as platform admin', () => {
@@ -34,20 +30,10 @@ describe('RBAC - Landlord Permissions', () => {
   it('has limited admin access', () => {
     expect(isAdminRole('LANDLORD')).toBe(true)
     expect(isPlatformAdmin('LANDLORD')).toBe(false)
-    expect(canManageProperty('LANDLORD')).toBe(true)
-    expect(canViewAdminDashboard('LANDLORD')).toBe(true)
   })
 
   it('is not a platform admin', () => {
     expect(isPlatformAdmin('LANDLORD')).toBe(false)
-  })
-
-  it('can manage properties', () => {
-    expect(canManageProperty('LANDLORD')).toBe(true)
-  })
-
-  it('can view the admin dashboard', () => {
-    expect(canViewAdminDashboard('LANDLORD')).toBe(true)
   })
 
   it('has the correct role label', () => {
@@ -59,8 +45,6 @@ describe('RBAC - Tenant Permissions', () => {
   it('has no admin access', () => {
     expect(isAdminRole('TENANT')).toBe(false)
     expect(isPlatformAdmin('TENANT')).toBe(false)
-    expect(canManageProperty('TENANT')).toBe(false)
-    expect(canViewAdminDashboard('TENANT')).toBe(false)
   })
 
   it('is not an admin role', () => {
@@ -69,14 +53,6 @@ describe('RBAC - Tenant Permissions', () => {
 
   it('is not a platform admin', () => {
     expect(isPlatformAdmin('TENANT')).toBe(false)
-  })
-
-  it('cannot manage properties', () => {
-    expect(canManageProperty('TENANT')).toBe(false)
-  })
-
-  it('cannot view the admin dashboard', () => {
-    expect(canViewAdminDashboard('TENANT')).toBe(false)
   })
 
   it('has the correct role label', () => {
@@ -97,8 +73,6 @@ describe('RBAC - Role Hierarchy', () => {
 
   it('Tenant is below both admin roles', () => {
     expect(isAdminRole('TENANT')).toBe(false)
-    expect(canManageProperty('TENANT')).toBe(false)
-    expect(canViewAdminDashboard('TENANT')).toBe(false)
   })
 
   it('only three valid roles exist in the label map', () => {
@@ -124,15 +98,11 @@ describe('RBAC - Removed Roles Are Not Recognized', () => {
   it('APPLICANT is not recognized as admin', () => {
     // @ts-expect-error testing removed role
     expect(isAdminRole('APPLICANT')).toBe(false)
-    // @ts-expect-error testing removed role
-    expect(canManageProperty('APPLICANT')).toBe(false)
   })
 
   it('VENDOR is not recognized as admin', () => {
     // @ts-expect-error testing removed role
     expect(isAdminRole('VENDOR')).toBe(false)
-    // @ts-expect-error testing removed role
-    expect(canViewAdminDashboard('VENDOR')).toBe(false)
   })
 
   it('PROPERTY_MANAGER is not recognized as admin', () => {

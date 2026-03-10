@@ -6,6 +6,7 @@ export const updateUserSchema = z.object({
   phone: z.string().optional(),
   role: z.enum(['PLATFORM_ADMIN', 'LANDLORD', 'TENANT']).optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED', 'PENDING']).optional(),
+  assignedLandlordId: z.string().nullable().optional(),
 })
 
 export const updateProfileSchema = z.object({
