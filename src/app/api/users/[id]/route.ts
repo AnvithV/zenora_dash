@@ -4,6 +4,7 @@ import { userService } from '@/server/services/user.service'
 import { updateUserSchema } from '@/lib/validations/user'
 import { apiError } from '@/lib/api-utils'
 import { notificationService } from '@/server/services/notification.service'
+import { emailService } from '@/server/services/email.service'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -48,6 +49,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         userId: id,
         organizationId: orgId,
       })
+      emailService.roleChanged(existingUser.email, existingUser.name ?? 'User', data.role)
     }
 
     if (data.status && data.status !== existingUser.status) {
@@ -60,6 +62,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           userId: id,
           organizationId: orgId,
         })
+        emailService.accountApproved(existingUser.email, existingUser.name ?? 'User')
       } else if (data.status === 'SUSPENDED') {
         await notificationService.notify({
           type: 'account_suspended',
@@ -68,6 +71,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           userId: id,
           organizationId: orgId,
         })
+        emailService.accountSuspended(existingUser.email, existingUser.name ?? 'User')
       }
     }
 

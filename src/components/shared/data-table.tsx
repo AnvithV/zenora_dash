@@ -96,7 +96,7 @@ export function DataTable<T extends Record<string, unknown>>({
 
   const getSortIcon = (key: string) => {
     if (!sorting || sorting.sortBy !== key) {
-      return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-zinc-400" />
+      return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-slate-400" />
     }
     return sorting.sortOrder === "asc" ? (
       <ArrowUp className="ml-1 h-3.5 w-3.5" />
@@ -129,15 +129,15 @@ export function DataTable<T extends Record<string, unknown>>({
   return (
     <div className={cn("space-y-4", className)}>
       {(search || (filters && filters.length > 0)) && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl bg-slate-50/60 p-3 dark:bg-slate-900/40 sm:flex-row sm:items-center sm:justify-between">
           {search && (
             <div className="relative max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
               <Input
                 placeholder={search.placeholder || "Search..."}
                 value={search.value}
                 onChange={(e) => search.onChange(e.target.value)}
-                className="pl-9"
+                className="pl-9 bg-white dark:bg-slate-950"
               />
             </div>
           )}
@@ -151,7 +151,7 @@ export function DataTable<T extends Record<string, unknown>>({
                     onFilterChange?.(filter.key, value === "all" ? "" : value)
                   }
                 >
-                  <SelectTrigger className="h-9 w-[150px]">
+                  <SelectTrigger className="h-9 w-[150px] bg-white dark:bg-slate-950">
                     <SelectValue placeholder={filter.label} />
                   </SelectTrigger>
                   <SelectContent>
@@ -169,7 +169,7 @@ export function DataTable<T extends Record<string, unknown>>({
         </div>
       )}
 
-      <div className="rounded-md border border-zinc-200 dark:border-zinc-800">
+      <div className="rounded-xl border border-slate-200/80 overflow-hidden dark:border-slate-800/60">
         <Table>
           <TableHeader>
             <TableRow>
@@ -177,7 +177,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 <TableHead key={column.key} className={column.className}>
                   {column.sortable ? (
                     <button
-                      className="inline-flex items-center hover:text-zinc-900 dark:hover:text-zinc-50"
+                      className="inline-flex items-center hover:text-slate-900 dark:hover:text-slate-50"
                       onClick={() => handleSort(column.key)}
                     >
                       {column.header}
@@ -233,11 +233,21 @@ export function DataTable<T extends Record<string, unknown>>({
 
       {pagination && !loading && data.length > 0 && (
         <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-          <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
             <span>
-              Showing {(pagination.page - 1) * pagination.pageSize + 1} to{" "}
-              {Math.min(pagination.page * pagination.pageSize, pagination.total)}{" "}
-              of {pagination.total} results
+              Showing{" "}
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {(pagination.page - 1) * pagination.pageSize + 1}
+              </span>{" "}
+              to{" "}
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {Math.min(pagination.page * pagination.pageSize, pagination.total)}
+              </span>{" "}
+              of{" "}
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {pagination.total}
+              </span>{" "}
+              results
             </span>
             {pagination.onPageSizeChange && (
               <Select
@@ -259,48 +269,60 @@ export function DataTable<T extends Record<string, unknown>>({
               </Select>
             )}
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => pagination.onPageChange(1)}
-              disabled={pagination.page <= 1}
-              aria-label="Go to first page"
-            >
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => pagination.onPageChange(pagination.page - 1)}
-              disabled={pagination.page <= 1}
-              aria-label="Go to previous page"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            {renderPaginationButtons()}
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => pagination.onPageChange(pagination.page + 1)}
-              disabled={pagination.page >= totalPages}
-              aria-label="Go to next page"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => pagination.onPageChange(totalPages)}
-              disabled={pagination.page >= totalPages}
-              aria-label="Go to last page"
-            >
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-500 dark:text-slate-400">
+              Page{" "}
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {pagination.page}
+              </span>{" "}
+              of{" "}
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {totalPages}
+              </span>
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 disabled:opacity-40"
+                onClick={() => pagination.onPageChange(1)}
+                disabled={pagination.page <= 1}
+                aria-label="Go to first page"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 disabled:opacity-40"
+                onClick={() => pagination.onPageChange(pagination.page - 1)}
+                disabled={pagination.page <= 1}
+                aria-label="Go to previous page"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {renderPaginationButtons()}
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 disabled:opacity-40"
+                onClick={() => pagination.onPageChange(pagination.page + 1)}
+                disabled={pagination.page >= totalPages}
+                aria-label="Go to next page"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 disabled:opacity-40"
+                onClick={() => pagination.onPageChange(totalPages)}
+                disabled={pagination.page >= totalPages}
+                aria-label="Go to last page"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       )}

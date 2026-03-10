@@ -19,7 +19,7 @@ export default auth((req) => {
   // Redirect authenticated users away from auth pages
   if (isAuthenticated && authRoutes.includes(pathname)) {
     const redirectTo = userRole && ADMIN_ROLES.includes(userRole)
-      ? '/admin/overview'
+      ? '/admin/users'
       : '/dashboard/overview'
     return NextResponse.redirect(new URL(redirectTo, req.url))
   }
@@ -46,7 +46,7 @@ export default auth((req) => {
   // Redirect admin-only roles from user dashboard to admin
   if (pathname.startsWith(dashboardPrefix)) {
     if (userRole && userRole === 'PLATFORM_ADMIN') {
-      return NextResponse.redirect(new URL('/admin/overview', req.url))
+      return NextResponse.redirect(new URL('/admin/users', req.url))
     }
   }
 

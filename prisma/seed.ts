@@ -44,6 +44,7 @@ async function main() {
       memberships: { create: { organizationId: org.id, role: 'LANDLORD' } },
     },
   })
+  
 
   const tenant1 = await prisma.user.upsert({
     where: { email: 'tenant1@zenportal.com' },

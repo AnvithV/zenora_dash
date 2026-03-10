@@ -25,20 +25,21 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 dark:from-slate-900 dark:via-slate-950 dark:to-violet-950/10">
       {/* Mobile overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className={cn(
+          "fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-sm transition-opacity duration-300 lg:hidden",
+          mobileMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
 
       {/* Mobile sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 lg:hidden",
+          "fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out lg:hidden",
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -59,7 +60,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
       {/* Main content */}
       <div
         className={cn(
-          "transition-all duration-300",
+          "transition-all duration-300 ease-in-out",
           sidebarCollapsed ? "lg:pl-16" : "lg:pl-64"
         )}
       >
@@ -69,7 +70,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
           onSignOut={handleSignOut}
         />
 
-        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="p-4 sm:p-6 lg:p-8 page-enter">{children}</main>
       </div>
     </div>
   )

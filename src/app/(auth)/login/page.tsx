@@ -8,7 +8,7 @@ import { loginSchema, type LoginInput } from '@/lib/validations/auth'
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-gray-50"><div className="text-gray-500">Loading...</div></div>}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-50/60 to-slate-100"><div className="text-slate-500">Loading...</div></div>}>
       <LoginForm />
     </Suspense>
   )
@@ -54,14 +54,16 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-50/60 via-white to-slate-100 px-4">
+      <div className="absolute top-0 right-0 h-[400px] w-[400px] rounded-full bg-violet-100/30 blur-3xl" />
+      <div className="absolute bottom-0 left-0 h-[300px] w-[300px] rounded-full bg-violet-200/20 blur-3xl" />
+      <div className="relative w-full max-w-md space-y-8 animate-fade-in">
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">ZenPortal</h1>
-          <h2 className="mt-2 text-xl text-gray-600">Sign in to your account</h2>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-700 to-violet-500 bg-clip-text text-transparent">ZenPortal</h1>
+          <h2 className="mt-2 text-xl text-slate-500">Sign in to your account</h2>
         </div>
 
-        <div className="rounded-lg border bg-white p-8 shadow-sm">
+        <div className="rounded-xl border border-slate-200/60 bg-white/80 p-8 shadow-xl shadow-slate-200/30 backdrop-blur-sm">
           {error && (
             <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
               {error}
@@ -70,7 +72,7 @@ function LoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700">
                 Email
               </label>
               <input
@@ -78,14 +80,14 @@ function LoginForm() {
                 type="email"
                 required
                 autoComplete="email"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm shadow-sm transition-all duration-200 hover:border-slate-300 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
                 Password
               </label>
               <input
@@ -93,7 +95,7 @@ function LoginForm() {
                 type="password"
                 required
                 autoComplete="current-password"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm shadow-sm transition-all duration-200 hover:border-slate-300 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
               />
@@ -102,7 +104,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-md bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+              className="w-full rounded-lg bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-2.5 text-sm text-white font-semibold shadow-sm shadow-violet-200 transition-all duration-200 hover:from-violet-700 hover:to-violet-600 hover:shadow-md hover:shadow-violet-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 disabled:opacity-50 active:scale-[0.98]"
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
@@ -111,16 +113,16 @@ function LoginForm() {
           <div className="mt-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border-slate-200" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                <span className="bg-white px-2 text-slate-500">Or continue with</span>
               </div>
             </div>
 
             <button
               onClick={handleGoogleSignIn}
-              className="mt-4 w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="mt-4 w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 active:scale-[0.98]"
             >
               <span className="flex items-center justify-center gap-2">
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -134,9 +136,9 @@ function LoginForm() {
             </button>
           </div>
 
-          <p className="mt-6 text-center text-sm text-gray-600">
+          <p className="mt-6 text-center text-sm text-slate-600">
             Don&apos;t have an account?{' '}
-            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link href="/register" className="font-medium text-violet-600 hover:text-violet-500">
               Create one
             </Link>
           </p>

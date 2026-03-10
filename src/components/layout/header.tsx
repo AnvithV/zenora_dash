@@ -22,7 +22,7 @@ export function Header({ onMobileMenuToggle, user, onSignOut }: HeaderProps) {
   const basePath = isAdminRole((user.role ?? '') as 'PLATFORM_ADMIN' | 'LANDLORD' | 'TENANT') ? '/admin' : '/dashboard'
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-zinc-200 bg-white/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-zinc-800 dark:bg-zinc-950/95 dark:supports-[backdrop-filter]:bg-zinc-950/60 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200/40 bg-white/70 px-4 backdrop-blur-xl transition-all dark:border-slate-800/60 dark:bg-slate-950/70 sm:px-6">
       <Button
         variant="ghost"
         size="icon"
@@ -37,7 +37,7 @@ export function Header({ onMobileMenuToggle, user, onSignOut }: HeaderProps) {
         <Breadcrumbs />
       </div>
 
-      <div className="ml-auto flex items-center gap-4">
+      <div className="ml-auto flex items-center gap-2">
         <NotificationBell basePath={basePath} />
         <UserMenu user={user} onSignOut={onSignOut} />
       </div>

@@ -42,3 +42,4 @@ next-env.d.ts
 
 # uploads (served via API, not static)
 /uploads
+.env*.local

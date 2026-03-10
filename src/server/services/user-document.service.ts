@@ -1,6 +1,8 @@
 import { userDocumentRepository, type UserDocumentFilters } from '@/server/repositories/user-document.repository'
 import { notificationRepository } from '@/server/repositories/notification.repository'
 import { auditRepository } from '@/server/repositories/audit.repository'
+import { emailService } from '@/server/services/email.service'
+import { prisma } from '@/lib/prisma'
 import type { CreateUserDocumentInput } from '@/lib/validations/user-document'
 
 export const userDocumentService = {
@@ -45,6 +47,15 @@ export const userDocumentService = {
       organizationId,
       metadata: { name: data.name, targetUserId: data.userId },
     })
+
+    // Email the user about the shared document
+    const targetUser = await prisma.user.findUnique({
+      where: { id: data.userId },
+      select: { email: true, name: true },
+    })
+    if (targetUser) {
+      emailService.documentShared(targetUser.email, targetUser.name ?? 'User', data.name)
+    }
 
     return doc
   },

@@ -1,6 +1,8 @@
 import { messageRepository, type MessageThreadFilters } from '@/server/repositories/message.repository'
 import { notificationRepository } from '@/server/repositories/notification.repository'
 import { auditRepository } from '@/server/repositories/audit.repository'
+import { emailService } from '@/server/services/email.service'
+import { prisma } from '@/lib/prisma'
 
 export const messageService = {
   async getConversations(userId: string) {
@@ -47,6 +49,15 @@ export const messageService = {
       organizationId: data.organizationId,
       metadata: { recipientId: data.recipientId },
     })
+
+    // Send email to recipient
+    const recipient = await prisma.user.findUnique({
+      where: { id: data.recipientId },
+      select: { email: true, name: true },
+    })
+    if (recipient) {
+      emailService.newMessage(recipient.email, recipient.name ?? 'User', data.senderName, data.content)
+    }
 
     return message
   },

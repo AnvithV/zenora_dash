@@ -51,9 +51,8 @@ export async function POST(req: NextRequest) {
     const baseName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, '_')
     const uniqueName = `${baseName}-${Date.now()}${ext}`
 
-    await saveFile(buffer, uniqueName)
+    const url = await saveFile(buffer, uniqueName)
 
-    const url = `/api/files/${uniqueName}`
     return NextResponse.json({
       success: true,
       data: { url, fileName: uniqueName, fileSize: file.size, mimeType: file.type },

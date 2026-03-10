@@ -1,9 +1,11 @@
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { rateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 import { notificationRepository } from '@/server/repositories/notification.repository'
+import { emailService } from '@/server/services/email.service'
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -63,10 +65,23 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex')
+    await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token: verificationToken,
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      },
+    })
+
+    // Send verification email
+    emailService.emailVerification(email, name, verificationToken)
+
     // Notify all platform admins about the new pending registration
     const platformAdmins = await prisma.user.findMany({
       where: { role: 'PLATFORM_ADMIN', status: 'ACTIVE' },
-      select: { id: true },
+      select: { id: true, email: true, name: true },
     })
 
     if (platformAdmins.length > 0) {
@@ -80,6 +95,10 @@ export async function POST(req: NextRequest) {
           organizationId: org.id,
         }))
       )
+      // Email each admin
+      for (const admin of platformAdmins) {
+        emailService.newRegistration(admin.email, admin.name ?? 'Admin', name, email)
+      }
     }
 
     return NextResponse.json({

@@ -19,22 +19,22 @@ export function PageHeader({
   actions,
 }: PageHeaderProps) {
   return (
-    <div className="mb-6">
+    <div className="mb-8 animate-fade-in">
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav aria-label="Breadcrumb" className="mb-2">
-          <ol className="flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+          <ol className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
             {breadcrumbs.map((crumb, index) => (
               <li key={index} className="flex items-center gap-1.5">
                 {index > 0 && <span>/</span>}
                 {crumb.href ? (
                   <a
                     href={crumb.href}
-                    className="hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
+                    className="hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
                   >
                     {crumb.label}
                   </a>
                 ) : (
-                  <span className="text-zinc-900 dark:text-zinc-50">
+                  <span className="text-slate-900 dark:text-slate-50">
                     {crumb.label}
                   </span>
                 )}
@@ -43,16 +43,16 @@ export function PageHeader({
           </ol>
         </nav>
       )}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 sm:text-3xl">{title}</h1>
           {description && (
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1.5 text-sm text-slate-400 dark:text-slate-500">
               {description}
             </p>
           )}
         </div>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>
     </div>
   )

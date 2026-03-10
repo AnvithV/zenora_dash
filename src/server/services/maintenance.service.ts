@@ -1,5 +1,7 @@
 import { maintenanceRepository, type MaintenanceFilters } from '@/server/repositories/maintenance.repository'
 import { auditRepository } from '@/server/repositories/audit.repository'
+import { emailService } from '@/server/services/email.service'
+import { prisma } from '@/lib/prisma'
 import type { CreateMaintenanceInput, UpdateMaintenanceInput, CreateCommentInput } from '@/lib/validations/maintenance'
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -85,6 +87,17 @@ export const maintenanceService = {
       organizationId,
       metadata: { changes: data },
     })
+
+    // Email the tenant if status changed
+    if (data.status && data.status !== existing.status) {
+      const requester = await prisma.user.findUnique({
+        where: { id: existing.requesterId },
+        select: { email: true, name: true },
+      })
+      if (requester) {
+        emailService.maintenanceUpdate(requester.email, requester.name ?? 'Tenant', existing.title, data.status)
+      }
+    }
 
     return request
   },

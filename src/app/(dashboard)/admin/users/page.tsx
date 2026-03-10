@@ -3,20 +3,32 @@
 import { useState } from 'react'
 import { useUsers, useUpdateUser } from '@/hooks/use-users'
 import { useRouter } from 'next/navigation'
-import { Search, Users, UserCheck, UserX, AlertCircle } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
-import { getStatusColor, getRoleLabel } from '@/lib/auth-utils'
+import { Search, Users, UserCheck, UserX, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { formatDate, getInitials } from '@/lib/utils'
+import { getRoleLabel } from '@/lib/auth-utils'
+import { PageHeader } from '@/components/shared/page-header'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import Link from 'next/link'
+import { Input } from '@/components/ui/input'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export default function UsersPage() {
   const router = useRouter()
   const [search, setSearch] = useState('')
-  const [roleFilter, setRoleFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [roleFilter, setRoleFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useUsers({ search, role: roleFilter, status: statusFilter, page, pageSize: 10 })
+  const { data, isLoading } = useUsers({
+    search,
+    role: roleFilter === 'all' ? '' : roleFilter,
+    status: statusFilter === 'all' ? '' : statusFilter,
+    page,
+    pageSize: 10,
+  })
   const { data: pendingData } = useUsers({ status: 'PENDING', pageSize: 1 })
   const updateUser = useUpdateUser()
 
@@ -35,34 +47,42 @@ export default function UsersPage() {
     updateUser.mutate({ id, data: { status: 'SUSPENDED' } })
   }
 
+  const roleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'PLATFORM_ADMIN': return 'default'
+      case 'LANDLORD': return 'secondary'
+      default: return 'outline' as const
+    }
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-        <p className="text-gray-500">{total} total users</p>
-      </div>
+    <div className="animate-fade-in space-y-6">
+      <PageHeader
+        title="Users"
+        description={`${total} total user${total !== 1 ? 's' : ''} across all roles`}
+      />
 
       {/* Pending Users Banner */}
       {pendingCount > 0 && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+        <div className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="rounded-full bg-yellow-100 p-2">
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+                <AlertCircle className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <p className="font-medium text-yellow-800">
+                <p className="font-semibold text-amber-900">
                   {pendingCount} pending user{pendingCount !== 1 ? 's' : ''} awaiting review
                 </p>
-                <p className="text-sm text-yellow-700">
-                  These users have registered and are waiting for approval.
+                <p className="text-sm text-amber-700">
+                  New registrations that need your approval.
                 </p>
               </div>
             </div>
             <Button
               variant="outline"
               size="sm"
-              className="border-yellow-300 text-yellow-800 hover:bg-yellow-100"
+              className="border-amber-300 bg-white text-amber-800 hover:bg-amber-50"
               onClick={() => {
                 setStatusFilter('PENDING')
                 setPage(1)
@@ -74,77 +94,136 @@ export default function UsersPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input type="text" placeholder="Search users..." className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
+      {/* Filters */}
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="relative min-w-[220px] flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            placeholder="Search by name or email..."
+            className="pl-10"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+          />
         </div>
-        <select className="rounded-md border border-gray-300 px-3 py-2 text-sm" value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1) }}>
-          <option value="">All Roles</option>
-          <option value="PLATFORM_ADMIN">Platform Admin</option>
-          <option value="LANDLORD">Landlord</option>
-          <option value="TENANT">Tenant</option>
-        </select>
-        <select className="rounded-md border border-gray-300 px-3 py-2 text-sm" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
-          <option value="">All Statuses</option>
-          <option value="ACTIVE">Active</option>
-          <option value="INACTIVE">Inactive</option>
-          <option value="SUSPENDED">Suspended</option>
-          <option value="PENDING">Pending</option>
-        </select>
+        <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setPage(1) }}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="All Roles" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="PLATFORM_ADMIN">Platform Admin</SelectItem>
+            <SelectItem value="LANDLORD">Landlord</SelectItem>
+            <SelectItem value="TENANT">Tenant</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="ACTIVE">Active</SelectItem>
+            <SelectItem value="INACTIVE">Inactive</SelectItem>
+            <SelectItem value="SUSPENDED">Suspended</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      {/* Users Table */}
+      <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-slate-50/80">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">User</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Role</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Joined</th>
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">User</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Role</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Joined</th>
+              <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-slate-100">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i}><td colSpan={5} className="px-6 py-4"><div className="h-6 animate-pulse rounded bg-gray-200" /></td></tr>
+                <tr key={i}>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-9 w-9 rounded-full" />
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-44" />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4"><Skeleton className="h-5 w-20" /></td>
+                  <td className="px-6 py-4"><Skeleton className="h-5 w-16" /></td>
+                  <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
+                  <td className="px-6 py-4"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                </tr>
               ))
             ) : users.length === 0 ? (
-              <tr><td colSpan={5} className="px-6 py-12 text-center"><Users className="mx-auto h-12 w-12 text-gray-300" /><p className="mt-2 text-sm text-gray-500">No users found</p></td></tr>
+              <tr>
+                <td colSpan={5} className="px-6 py-16 text-center">
+                  <Users className="mx-auto h-12 w-12 text-slate-300" />
+                  <p className="mt-3 text-sm font-medium text-slate-500">No users found</p>
+                  <p className="mt-1 text-sm text-slate-400">Try adjusting your search or filters.</p>
+                </td>
+              </tr>
             ) : (
               users.map((user: Record<string, unknown>) => (
-                <tr key={user.id as string} className="cursor-pointer hover:bg-gray-50" onClick={() => router.push(`/admin/users/${user.id}`)}>
+                <tr
+                  key={user.id as string}
+                  className="cursor-pointer transition-colors hover:bg-violet-50/40"
+                  onClick={() => router.push(`/admin/users/${user.id}`)}
+                >
                   <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{(user.name as string) ?? 'Unnamed'}</div>
-                    <div className="text-sm text-gray-500">{user.email as string}</div>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={user.image as string} alt={(user.name as string) ?? ''} />
+                        <AvatarFallback className="bg-violet-100 text-xs font-medium text-violet-700">
+                          {getInitials((user.name as string) ?? (user.email as string) ?? '?')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-slate-900">{(user.name as string) ?? 'Unnamed'}</p>
+                        <p className="text-sm text-slate-500">{user.email as string}</p>
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-sm">{getRoleLabel(user.role as string)}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(user.status as string)}`}>{user.status as string}</span>
+                    <Badge variant={roleBadgeVariant(user.role as string)}>
+                      {getRoleLabel(user.role as string)}
+                    </Badge>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{formatDate(user.createdAt as string)}</td>
+                  <td className="px-6 py-4">
+                    <StatusBadge status={user.status as string} />
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-500">
+                    {formatDate(user.createdAt as string)}
+                  </td>
                   <td className="px-6 py-4 text-right">
                     {user.status === 'PENDING' && (
                       <div className="flex items-center justify-end gap-2">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 gap-1 text-green-700 hover:bg-green-50 hover:text-green-800"
                           onClick={(e) => handleApprove(user.id as string, e)}
                           disabled={updateUser.isPending}
-                          className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
-                          aria-label="Approve user"
                         >
                           <UserCheck className="h-3.5 w-3.5" />
                           Approve
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 gap-1 text-red-700 hover:bg-red-50 hover:text-red-800"
                           onClick={(e) => handleReject(user.id as string, e)}
                           disabled={updateUser.isPending}
-                          className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors"
-                          aria-label="Reject user"
                         >
                           <UserX className="h-3.5 w-3.5" />
                           Reject
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </td>
@@ -153,12 +232,32 @@ export default function UsersPage() {
             )}
           </tbody>
         </table>
+
+        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t px-6 py-3">
-            <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
-            <div className="flex gap-2">
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="rounded-md border px-3 py-1 text-sm disabled:opacity-50">Previous</button>
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="rounded-md border px-3 py-1 text-sm disabled:opacity-50">Next</button>
+          <div className="flex items-center justify-between border-t border-slate-100 px-6 py-3">
+            <p className="text-sm text-slate-500">
+              Page {page} of {totalPages}
+            </p>
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         )}

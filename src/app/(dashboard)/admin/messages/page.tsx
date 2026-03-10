@@ -59,8 +59,8 @@ export default function AdminMessagesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-          <p className="text-gray-500">Communicate with tenants and landlords</p>
+          <h1 className="text-2xl font-bold text-slate-900">Messages</h1>
+          <p className="text-slate-500">Communicate with tenants and landlords</p>
         </div>
         <Dialog open={showNewConversation} onOpenChange={setShowNewConversation}>
           <DialogTrigger asChild>
@@ -75,11 +75,11 @@ export default function AdminMessagesPage() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search users..."
-                  className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-md border border-slate-200 py-2 pl-10 pr-4 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                 />
@@ -89,20 +89,20 @@ export default function AdminMessagesPage() {
                   <button
                     key={user.id}
                     onClick={() => handleStartConversation(user.id)}
-                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-gray-100"
+                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-slate-100"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-700">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 text-xs font-medium text-violet-700">
                       {getInitials(user.name || 'U')}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-gray-900">{user.name}</p>
-                      <p className="truncate text-xs text-gray-500">{user.email}</p>
+                      <p className="truncate text-sm font-medium text-slate-900">{user.name}</p>
+                      <p className="truncate text-xs text-slate-500">{user.email}</p>
                     </div>
-                    <span className="text-xs text-gray-400">{getRoleLabel(user.role)}</span>
+                    <span className="text-xs text-slate-400">{getRoleLabel(user.role)}</span>
                   </button>
                 ))}
                 {users.length === 0 && (
-                  <p className="py-4 text-center text-sm text-gray-500">No users found</p>
+                  <p className="py-4 text-center text-sm text-slate-500">No users found</p>
                 )}
               </div>
             </div>
@@ -110,16 +110,16 @@ export default function AdminMessagesPage() {
         </Dialog>
       </div>
 
-      <div className="flex h-[calc(100vh-220px)] overflow-hidden rounded-lg border bg-white shadow-sm">
+      <div className="flex h-[calc(100vh-220px)] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         {/* Left panel - Conversations */}
         <div className="flex w-80 flex-col border-r">
           <div className="border-b p-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search conversations..."
-                className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-md border border-slate-200 py-2 pl-10 pr-4 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -130,13 +130,13 @@ export default function AdminMessagesPage() {
             {loadingConversations ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="border-b p-4">
-                  <div className="h-12 animate-pulse rounded bg-gray-200" />
+                  <div className="h-12 animate-pulse rounded bg-slate-200" />
                 </div>
               ))
             ) : filteredConversations.length === 0 ? (
               <div className="flex flex-col items-center justify-center px-4 py-12">
-                <MessageSquare className="h-12 w-12 text-gray-300" />
-                <p className="mt-2 text-sm text-gray-500">No conversations yet</p>
+                <MessageSquare className="h-12 w-12 text-slate-300" />
+                <p className="mt-2 text-sm text-slate-500">No conversations yet</p>
               </div>
             ) : (
               filteredConversations.map(
@@ -148,19 +148,19 @@ export default function AdminMessagesPage() {
                   <button
                     key={conv.otherUser.id}
                     onClick={() => setSelectedUserId(conv.otherUser.id)}
-                    className={`flex w-full items-start gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
-                      selectedUserId === conv.otherUser.id ? 'bg-blue-50' : ''
+                    className={`flex w-full items-start gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-slate-50 ${
+                      selectedUserId === conv.otherUser.id ? 'bg-violet-50' : ''
                     }`}
                   >
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-medium text-blue-700">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-violet-100 text-sm font-medium text-violet-700">
                       {getInitials(conv.otherUser.name || 'U')}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">
-                        <span className="truncate text-sm font-medium text-gray-900">
+                        <span className="truncate text-sm font-medium text-slate-900">
                           {conv.otherUser.name}
                         </span>
-                        <span className="flex-shrink-0 text-xs text-gray-400">
+                        <span className="flex-shrink-0 text-xs text-slate-400">
                           {formatDateTime(conv.lastMessage?.createdAt)}
                         </span>
                       </div>
@@ -170,17 +170,17 @@ export default function AdminMessagesPage() {
                             ? 'bg-green-100 text-green-700'
                             : conv.otherUser.role === 'LANDLORD'
                             ? 'bg-purple-100 text-purple-700'
-                            : 'bg-blue-100 text-blue-700'
+                            : 'bg-violet-100 text-violet-700'
                         }`}>
                           {getRoleLabel(conv.otherUser.role)}
                         </span>
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-gray-500">
+                      <p className="mt-0.5 truncate text-xs text-slate-500">
                         {conv.lastMessage?.content ?? 'No messages yet'}
                       </p>
                     </div>
                     {conv.unreadCount > 0 && (
-                      <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                      <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">
                         {conv.unreadCount}
                       </span>
                     )}
@@ -194,7 +194,7 @@ export default function AdminMessagesPage() {
         {/* Right panel - Thread */}
         <div className="flex flex-1 flex-col">
           {!selectedUserId ? (
-            <div className="flex flex-1 flex-col items-center justify-center text-gray-400">
+            <div className="flex flex-1 flex-col items-center justify-center text-slate-400">
               <MessageSquare className="h-16 w-16" />
               <p className="mt-4 text-lg font-medium">Select a conversation</p>
               <p className="text-sm">Choose a conversation from the left panel to start messaging</p>
@@ -203,11 +203,11 @@ export default function AdminMessagesPage() {
             <>
               {/* Thread header */}
               <div className="flex items-center gap-3 border-b px-4 py-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-medium text-blue-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100 text-sm font-medium text-violet-700">
                   {getInitials(selectedConversation?.otherUser?.name || 'U')}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-slate-900">
                     {selectedConversation?.otherUser?.name ?? 'User'}
                   </p>
                   <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
@@ -215,7 +215,7 @@ export default function AdminMessagesPage() {
                       ? 'bg-green-100 text-green-700'
                       : selectedConversation?.otherUser?.role === 'LANDLORD'
                       ? 'bg-purple-100 text-purple-700'
-                      : 'bg-blue-100 text-blue-700'
+                      : 'bg-violet-100 text-violet-700'
                   }`}>
                     {getRoleLabel(selectedConversation?.otherUser?.role ?? '')}
                   </span>
@@ -227,11 +227,11 @@ export default function AdminMessagesPage() {
                 {loadingThread ? (
                   <div className="space-y-4">
                     {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-200" />
+                      <div key={i} className="h-16 animate-pulse rounded-lg bg-slate-200" />
                     ))}
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="flex h-full flex-col items-center justify-center text-gray-400">
+                  <div className="flex h-full flex-col items-center justify-center text-slate-400">
                     <p className="text-sm">No messages yet. Start the conversation!</p>
                   </div>
                 ) : (
@@ -253,14 +253,14 @@ export default function AdminMessagesPage() {
                             <div
                               className={`max-w-[70%] rounded-lg px-4 py-2 ${
                                 isOwnMessage
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-100 text-gray-900'
+                                  ? 'bg-violet-600 text-white'
+                                  : 'bg-slate-100 text-slate-900'
                               }`}
                             >
                               <p className="text-sm">{msg.content}</p>
                               <p
                                 className={`mt-1 text-[10px] ${
-                                  isOwnMessage ? 'text-blue-200' : 'text-gray-400'
+                                  isOwnMessage ? 'text-violet-200' : 'text-slate-400'
                                 }`}
                               >
                                 {formatDateTime(msg.createdAt)}
@@ -281,7 +281,7 @@ export default function AdminMessagesPage() {
                   <input
                     type="text"
                     placeholder="Type a message..."
-                    className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="flex-1 rounded-md border border-slate-200 px-4 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={(e) => {

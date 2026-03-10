@@ -14,9 +14,9 @@ export function LoadingState({ message, className }: LoadingStateProps) {
         className
       )}
     >
-      <Loader2 className="h-8 w-8 animate-spin text-zinc-400 dark:text-zinc-500" />
+      <Loader2 className="h-8 w-8 animate-spin text-violet-400 dark:text-violet-400" />
       {message && (
-        <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-4 text-sm font-medium text-slate-500 dark:text-slate-400">
           {message}
         </p>
       )}
