@@ -48,11 +48,23 @@ export const userDocumentService = {
       metadata: { name: data.name, targetUserId: data.userId },
     })
 
-    // Email the user about the shared document
+    // Notify the tenant's assigned landlord about the document
     const targetUser = await prisma.user.findUnique({
       where: { id: data.userId },
-      select: { email: true, name: true },
+      select: { email: true, name: true, assignedLandlordId: true, role: true },
     })
+    if (targetUser?.role === 'TENANT' && targetUser.assignedLandlordId) {
+      await notificationRepository.create({
+        type: 'document_shared',
+        title: 'Document Shared with Tenant',
+        message: `A document "${data.name}" was shared with ${targetUser.name ?? 'a tenant'}`,
+        link: '/landlord/tenants',
+        userId: targetUser.assignedLandlordId,
+        organizationId,
+      })
+    }
+
+    // Email the user about the shared document
     if (targetUser) {
       emailService.documentShared(targetUser.email, targetUser.name ?? 'User', data.name)
     }

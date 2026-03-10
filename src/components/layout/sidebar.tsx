@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
-import { adminNavItems, userNavItems } from "@/lib/navigation"
+import { adminNavItems, landlordNavItems, userNavItems } from "@/lib/navigation"
 import { APP_NAME } from "@/lib/constants"
 
 interface SidebarProps {
@@ -19,7 +19,8 @@ interface SidebarProps {
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname()
   const isAdmin = pathname.startsWith("/admin")
-  const navItems = isAdmin ? adminNavItems : userNavItems
+  const isLandlord = pathname.startsWith("/landlord")
+  const navItems = isAdmin ? adminNavItems : isLandlord ? landlordNavItems : userNavItems
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -38,7 +39,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         >
           {!collapsed ? (
             <Link
-              href={isAdmin ? "/admin/users" : "/dashboard/overview"}
+              href={isAdmin ? "/admin/users" : isLandlord ? "/landlord/tenants" : "/dashboard/overview"}
               className="flex items-center gap-2.5 group"
             >
               <span className="text-lg font-bold bg-gradient-to-r from-violet-700 to-violet-500 bg-clip-text text-transparent dark:from-violet-400 dark:to-violet-300">
@@ -47,7 +48,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </Link>
           ) : (
             <Link
-              href={isAdmin ? "/admin/users" : "/dashboard/overview"}
+              href={isAdmin ? "/admin/users" : isLandlord ? "/landlord/tenants" : "/dashboard/overview"}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-violet-600 dark:text-violet-400"
             >
               Z

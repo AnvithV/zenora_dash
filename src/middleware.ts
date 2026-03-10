@@ -7,9 +7,8 @@ const { auth } = NextAuth(authConfig)
 const publicRoutes = ['/', '/login', '/register']
 const authRoutes = ['/login', '/register']
 const adminPrefix = '/admin'
+const landlordPrefix = '/landlord'
 const dashboardPrefix = '/dashboard'
-
-const ADMIN_ROLES = ['PLATFORM_ADMIN', 'LANDLORD']
 
 export default auth((req) => {
   const { pathname } = req.nextUrl
@@ -18,10 +17,9 @@ export default auth((req) => {
 
   // Redirect authenticated users away from auth pages
   if (isAuthenticated && authRoutes.includes(pathname)) {
-    const redirectTo = userRole && ADMIN_ROLES.includes(userRole)
-      ? '/admin/users'
-      : '/dashboard/overview'
-    return NextResponse.redirect(new URL(redirectTo, req.url))
+    if (userRole === 'PLATFORM_ADMIN') return NextResponse.redirect(new URL('/admin/users', req.url))
+    if (userRole === 'LANDLORD') return NextResponse.redirect(new URL('/landlord/tenants', req.url))
+    return NextResponse.redirect(new URL('/dashboard/overview', req.url))
   }
 
   // Allow public routes
@@ -36,18 +34,26 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Admin route protection
+  // Admin route protection - only PLATFORM_ADMIN
   if (pathname.startsWith(adminPrefix)) {
-    if (!userRole || !ADMIN_ROLES.includes(userRole)) {
+    if (userRole !== 'PLATFORM_ADMIN') {
+      if (userRole === 'LANDLORD') return NextResponse.redirect(new URL('/landlord/tenants', req.url))
       return NextResponse.redirect(new URL('/dashboard/overview', req.url))
     }
   }
 
-  // Redirect admin-only roles from user dashboard to admin
-  if (pathname.startsWith(dashboardPrefix)) {
-    if (userRole && userRole === 'PLATFORM_ADMIN') {
-      return NextResponse.redirect(new URL('/admin/users', req.url))
+  // Landlord route protection - only LANDLORD
+  if (pathname.startsWith(landlordPrefix)) {
+    if (userRole !== 'LANDLORD') {
+      if (userRole === 'PLATFORM_ADMIN') return NextResponse.redirect(new URL('/admin/users', req.url))
+      return NextResponse.redirect(new URL('/dashboard/overview', req.url))
     }
+  }
+
+  // Redirect non-tenant roles from user dashboard
+  if (pathname.startsWith(dashboardPrefix)) {
+    if (userRole === 'PLATFORM_ADMIN') return NextResponse.redirect(new URL('/admin/users', req.url))
+    if (userRole === 'LANDLORD') return NextResponse.redirect(new URL('/landlord/tenants', req.url))
   }
 
   return NextResponse.next()

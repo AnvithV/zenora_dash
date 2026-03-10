@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth-utils'
 import { prisma } from '@/lib/prisma'
 import { updateProfileSchema } from '@/lib/validations/user'
 import { apiError } from '@/lib/api-utils'
+import { notificationRepository } from '@/server/repositories/notification.repository'
 
 export async function GET() {
   try {
@@ -56,6 +57,23 @@ export async function PATCH(req: NextRequest) {
         createdAt: true,
       },
     })
+
+    // Notify assigned landlord about tenant profile update
+    if (user.role === 'TENANT') {
+      const fullUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { assignedLandlordId: true, name: true },
+      })
+      if (fullUser?.assignedLandlordId) {
+        await notificationRepository.create({
+          type: 'INFO',
+          title: 'Tenant Profile Updated',
+          message: `${fullUser.name ?? 'A tenant'} updated their profile`,
+          link: '/landlord/tenants',
+          userId: fullUser.assignedLandlordId,
+        })
+      }
+    }
 
     return NextResponse.json({ success: true, data: updated })
   } catch (error) {

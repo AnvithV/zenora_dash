@@ -1,5 +1,6 @@
 import { maintenanceRepository, type MaintenanceFilters } from '@/server/repositories/maintenance.repository'
 import { auditRepository } from '@/server/repositories/audit.repository'
+import { notificationService } from '@/server/services/notification.service'
 import { emailService } from '@/server/services/email.service'
 import { prisma } from '@/lib/prisma'
 import type { CreateMaintenanceInput, UpdateMaintenanceInput, CreateCommentInput } from '@/lib/validations/maintenance'
@@ -47,6 +48,22 @@ export const maintenanceService = {
       organizationId,
       metadata: { title: data.title, priority: data.priority },
     })
+
+    // Notify the tenant's assigned landlord
+    const requester = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, assignedLandlordId: true },
+    })
+    if (requester?.assignedLandlordId) {
+      await notificationService.notify({
+        type: 'MAINTENANCE',
+        title: 'New Maintenance Request',
+        message: `${requester.name ?? 'A tenant'} submitted: "${data.title}" (${data.priority})`,
+        link: '/landlord/tenants',
+        userId: requester.assignedLandlordId,
+        organizationId,
+      })
+    }
 
     return request
   },
