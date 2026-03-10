@@ -4,6 +4,8 @@ import {
 
 export const adminNavItems = [
   { label: 'Users', href: '/admin/users', icon: Users },
+  { label: 'Messages', href: '/admin/messages', icon: MessageSquare },
+  { label: 'Notifications', href: '/admin/notifications', icon: Bell },
 ]
 
 export const userNavItems = [
