@@ -1,24 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useUser, useUpdateUser, useSendEmail } from '@/hooks/use-users'
 import { useSendMessage } from '@/hooks/use-messages'
+import { useUserDocuments, useCreateUserDocument, useDeleteUserDocument } from '@/hooks/use-user-documents'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Building2, FileText, Wrench, Mail, Phone, Calendar, Clock, Shield, UserCheck, UserX, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Building2, FileText, FileUp, Wrench, Mail, Phone, Calendar, Clock, Shield, UserCheck, UserX, MessageSquare, Trash2, Download, Upload } from 'lucide-react'
 import { formatDate, getInitials } from '@/lib/utils'
 import { getRoleLabel } from '@/lib/auth-utils'
 import { StatusBadge } from '@/components/shared/status-badge'
-import { PageHeader } from '@/components/shared/page-header'
+import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { toast } from '@/hooks/use-toast'
 
 export default function UserDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -28,12 +31,29 @@ export default function UserDetailPage() {
   const sendMessage = useSendMessage()
   const sendEmail = useSendEmail()
 
+  // Documents
+  const { data: docsData } = useUserDocuments({ userId: id })
+  const createDocument = useCreateUserDocument()
+  const deleteDocument = useDeleteUserDocument()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   // Dialog state
   const [showMessageDialog, setShowMessageDialog] = useState(false)
   const [showEmailDialog, setShowEmailDialog] = useState(false)
   const [messageContent, setMessageContent] = useState('')
   const [emailSubject, setEmailSubject] = useState('')
   const [emailBody, setEmailBody] = useState('')
+
+  // Document upload dialog state
+  const [showUploadDialog, setShowUploadDialog] = useState(false)
+  const [docName, setDocName] = useState('')
+  const [docDescription, setDocDescription] = useState('')
+  const [docFile, setDocFile] = useState<File | null>(null)
+  const [uploadError, setUploadError] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+
+  // Document delete confirmation state
+  const [deleteDocId, setDeleteDocId] = useState<string | null>(null)
 
   if (isLoading) return <LoadingSkeleton />
 
@@ -79,6 +99,61 @@ export default function UserDetailPage() {
         },
       },
     )
+  }
+
+  const documents = (docsData?.data ?? []) as Array<{
+    id: string
+    name: string
+    description?: string
+    fileName: string
+    fileSize: number
+    mimeType: string
+    url: string
+    createdAt: string
+    uploadedBy?: { name?: string }
+  }>
+
+  const handleUploadDocument = async () => {
+    if (!docName.trim() || !docFile) return
+    setUploadError('')
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', docFile)
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error ?? 'Upload failed')
+      }
+      const { url, fileName, fileSize, mimeType } = await res.json()
+      createDocument.mutate(
+        { name: docName.trim(), description: docDescription.trim() || undefined, userId: id, url, fileName, fileSize, mimeType },
+        {
+          onSuccess: () => {
+            setShowUploadDialog(false)
+            setDocName('')
+            setDocDescription('')
+            setDocFile(null)
+            toast({ title: 'Document uploaded', description: `"${docName.trim()}" has been uploaded.` })
+          },
+          onError: () => setUploadError('Failed to save document record.'),
+        },
+      )
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleDeleteDocument = () => {
+    if (!deleteDocId) return
+    deleteDocument.mutate(deleteDocId, {
+      onSuccess: () => {
+        setDeleteDocId(null)
+        toast({ title: 'Document deleted' })
+      },
+    })
   }
 
   const handleSendEmail = () => {
@@ -231,6 +306,67 @@ export default function UserDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Documents */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <FileUp className="h-4 w-4 text-slate-400" />
+                Documents
+                {documents.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">{documents.length}</Badge>
+                )}
+              </CardTitle>
+              <Button size="sm" className="gap-2" onClick={() => setShowUploadDialog(true)}>
+                <Upload className="h-4 w-4" />
+                Upload
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {documents.length === 0 ? (
+                <div className="py-8 text-center">
+                  <FileUp className="mx-auto h-10 w-10 text-slate-300" />
+                  <p className="mt-2 text-sm text-slate-500">No documents yet</p>
+                  <Button variant="outline" size="sm" className="mt-3 gap-2" onClick={() => setShowUploadDialog(true)}>
+                    <Upload className="h-4 w-4" />
+                    Upload Document
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-slate-900">{doc.name}</p>
+                        <p className="text-xs text-slate-500">
+                          {formatFileSize(doc.fileSize)} &middot; {formatDate(doc.createdAt)}
+                          {doc.uploadedBy?.name && <> &middot; by {doc.uploadedBy.name}</>}
+                        </p>
+                      </div>
+                      <div className="ml-3 flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer" title="Download">
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600"
+                          onClick={() => setDeleteDocId(doc.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Tenant: Leases */}
           {isTenant && hasLeases && (
             <Card>
@@ -355,6 +491,7 @@ export default function UserDetailPage() {
             <CardContent>
               <div className="space-y-3">
                 <StatRow icon={FileText} label="Leases" value={user._count?.leases ?? 0} />
+                <StatRow icon={FileUp} label="Documents" value={documents.length} />
                 <StatRow icon={Wrench} label="Maintenance" value={user._count?.maintenanceRequests ?? 0} />
                 <StatRow icon={Building2} label="Owned Properties" value={user._count?.ownedProperties ?? 0} />
                 <StatRow icon={Building2} label="Managed Properties" value={user._count?.managedProperties ?? 0} />
@@ -455,6 +592,57 @@ export default function UserDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Upload Document Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={(open) => { if (!open) { setShowUploadDialog(false); setDocName(''); setDocDescription(''); setDocFile(null); setUploadError('') } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>Upload a document for {user.name ?? 'this user'}.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="doc-name">Name *</Label>
+              <Input id="doc-name" placeholder="e.g. Lease Agreement" value={docName} onChange={(e) => setDocName(e.target.value)} className="mt-1.5" />
+            </div>
+            <div>
+              <Label htmlFor="doc-desc">Description</Label>
+              <Textarea id="doc-desc" placeholder="Optional description..." value={docDescription} onChange={(e) => setDocDescription(e.target.value)} rows={2} className="mt-1.5" />
+            </div>
+            <div>
+              <Label htmlFor="doc-file">File *</Label>
+              <Input
+                id="doc-file"
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.txt,.csv"
+                onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
+                className="mt-1.5"
+              />
+            </div>
+            {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowUploadDialog(false); setDocName(''); setDocDescription(''); setDocFile(null); setUploadError('') }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUploadDocument} disabled={!docName.trim() || !docFile || isUploading || createDocument.isPending}>
+              {isUploading || createDocument.isPending ? 'Uploading...' : 'Upload'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Document Confirmation */}
+      <ConfirmDialog
+        open={!!deleteDocId}
+        onOpenChange={(open) => { if (!open) setDeleteDocId(null) }}
+        title="Delete Document"
+        description="Are you sure you want to delete this document? This action cannot be undone."
+        confirmLabel={deleteDocument.isPending ? 'Deleting...' : 'Delete'}
+        onConfirm={handleDeleteDocument}
+        variant="destructive"
+      />
     </div>
   )
 }
@@ -481,6 +669,14 @@ function StatRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
       <span className="text-sm font-semibold text-slate-900">{value}</span>
     </div>
   )
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB']
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+  const size = bytes / Math.pow(1024, i)
+  return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
 }
 
 function LoadingSkeleton() {

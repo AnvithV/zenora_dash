@@ -2,9 +2,10 @@
 
 import { useState, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { FileBox, Download, Plus } from 'lucide-react'
+import { FileBox, Download, Plus, FileUp } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { fetchApi } from '@/lib/api-client'
+import { useUserDocuments } from '@/hooks/use-user-documents'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 
 export default function UserDocumentsPage() {
@@ -15,6 +16,19 @@ export default function UserDocumentsPage() {
   })
 
   const documents = data?.items ?? []
+
+  // Admin-assigned documents (shared with this user)
+  const { data: sharedData, isLoading: sharedLoading } = useUserDocuments()
+  const sharedDocuments = (sharedData?.data ?? []) as Array<{
+    id: string
+    name: string
+    description?: string
+    fileName: string
+    fileSize: number
+    url: string
+    createdAt: string
+    uploadedBy?: { name?: string }
+  }>
 
   const [uploadOpen, setUploadOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -104,6 +118,34 @@ export default function UserDocumentsPage() {
                 </a>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Shared Documents (admin-assigned) */}
+      {sharedLoading ? (
+        <div className="h-32 animate-pulse rounded-lg bg-slate-200" />
+      ) : sharedDocuments.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-slate-900">Shared with you</h2>
+          <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="divide-y divide-slate-200">
+              {sharedDocuments.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between px-6 py-4">
+                  <div>
+                    <p className="font-medium">{doc.name}</p>
+                    <p className="text-sm text-slate-500">
+                      {formatDate(doc.createdAt)}
+                      {doc.uploadedBy?.name && <> &middot; from {doc.uploadedBy.name}</>}
+                      {doc.description && <> &middot; {doc.description}</>}
+                    </p>
+                  </div>
+                  <a href={doc.url} target="_blank" rel="noopener noreferrer" className="rounded-md border border-slate-200 px-3 py-1 text-sm text-violet-600 hover:bg-violet-50">
+                    <Download className="inline h-4 w-4 mr-1" />Download
+                  </a>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
