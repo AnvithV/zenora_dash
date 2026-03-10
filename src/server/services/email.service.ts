@@ -1,6 +1,9 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  if (!process.env.RESEND_API_KEY) return null
+  return new Resend(process.env.RESEND_API_KEY)
+}
 const FROM_EMAIL = process.env.EMAIL_FROM ?? 'zenoramgmt@gmail.com'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 const APP_NAME = 'ZenPortal'
@@ -22,7 +25,8 @@ function layout(body: string) {
 
 export const emailService = {
   async send(to: string, subject: string, html: string) {
-    if (!process.env.RESEND_API_KEY) {
+    const resend = getResend()
+    if (!resend) {
       console.warn('[Email] RESEND_API_KEY not set, skipping email to:', to)
       return null
     }
