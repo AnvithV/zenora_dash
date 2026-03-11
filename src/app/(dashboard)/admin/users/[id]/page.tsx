@@ -114,7 +114,7 @@ export default function UserDetailPage() {
     )
   }
 
-  const documents = (docsData?.data ?? []) as Array<{
+  const documents = (docsData?.items ?? []) as Array<{
     id: string
     name: string
     description?: string
@@ -138,7 +138,8 @@ export default function UserDetailPage() {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error ?? 'Upload failed')
       }
-      const { url, fileName, fileSize, mimeType } = await res.json()
+      const uploadResult = await res.json()
+      const { url, fileName, fileSize, mimeType } = uploadResult.data
       createDocument.mutate(
         { name: docName.trim(), description: docDescription.trim() || undefined, userId: id, url, fileName, fileSize, mimeType },
         {
@@ -247,7 +248,7 @@ export default function UserDetailPage() {
     )
   }
 
-  const landlords = (landlordsData?.data ?? []) as Array<{ id: string; name: string | null; email: string }>
+  const landlords = (landlordsData?.items ?? []) as Array<{ id: string; name: string | null; email: string }>
 
   return (
     <div className="animate-fade-in space-y-6">

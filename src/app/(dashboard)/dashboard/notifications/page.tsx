@@ -2,17 +2,23 @@
 
 import { useState } from 'react'
 import { useNotifications, useMarkNotificationsRead } from '@/hooks/use-notifications'
-import { Bell, Check, CheckCheck, Info, AlertTriangle, MessageSquare, FileText, Wrench } from 'lucide-react'
+import { Bell, Check, CheckCheck, Info, AlertTriangle, MessageSquare, FileText, Wrench, DollarSign, UserCheck, UserX } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 const typeIcons: Record<string, React.ElementType> = {
   MESSAGE: MessageSquare,
+  new_message: MessageSquare,
   MAINTENANCE: Wrench,
   LEASE: FileText,
+  PAYMENT: DollarSign,
   WARNING: AlertTriangle,
   INFO: Info,
+  document_shared: FileText,
+  role_changed: UserCheck,
+  account_approved: UserCheck,
+  account_suspended: UserX,
 }
 
 export default function TenantNotificationsPage() {

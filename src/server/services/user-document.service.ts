@@ -34,7 +34,7 @@ export const userDocumentService = {
       type: 'document_shared',
       title: 'Document Shared',
       message: `A document "${data.name}" has been shared with you`,
-      link: `/user-documents/${doc.id}`,
+      link: '/dashboard/documents',
       userId: data.userId,
       organizationId,
     })

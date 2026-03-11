@@ -32,7 +32,7 @@ export default function LeasesPage() {
   const { data, isLoading } = useLeases({ search, status: statusFilter, page, pageSize: 10 })
   const createMutation = useCreateLease()
   const { data: unitsData } = useUnits({ pageSize: 100 })
-  const { data: usersData } = useUsers({ pageSize: 100 })
+  const { data: usersData } = useUsers({ role: 'TENANT', pageSize: 100 })
 
   const leases = data?.items ?? []
   const total = data?.total ?? 0

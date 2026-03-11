@@ -35,7 +35,7 @@ export const messageService = {
       type: 'new_message',
       title: 'New Message',
       message: `${data.senderName ?? 'Someone'} sent you a message`,
-      link: `/messages/${data.senderId}`,
+      link: '/dashboard/messages',
       userId: data.recipientId,
       organizationId: data.organizationId,
     })

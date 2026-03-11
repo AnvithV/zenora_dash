@@ -53,14 +53,14 @@ export const messageRepository = {
           }),
         ])
 
-        return { partner, latestMessage, unreadCount }
+        return { otherUser: partner, lastMessage: latestMessage, unreadCount }
       })
     )
 
     // Sort by latest message date
     conversations.sort((a, b) => {
-      const dateA = a.latestMessage?.createdAt ?? new Date(0)
-      const dateB = b.latestMessage?.createdAt ?? new Date(0)
+      const dateA = a.lastMessage?.createdAt ?? new Date(0)
+      const dateB = b.lastMessage?.createdAt ?? new Date(0)
       return dateB.getTime() - dateA.getTime()
     })
 

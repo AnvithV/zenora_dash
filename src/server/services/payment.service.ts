@@ -49,7 +49,7 @@ export const paymentService = {
       type: 'PAYMENT',
       title: 'New Payment Due',
       message: `A payment of $${data.amount.toFixed(2)} is due on ${new Date(data.dueDate).toLocaleDateString()}`,
-      link: '/dashboard/lease',
+      link: '/dashboard/payments',
       userId: lease.tenantId,
       organizationId: lease.organizationId,
     })
@@ -93,7 +93,7 @@ export const paymentService = {
         type: 'PAYMENT',
         title: 'Payment Status Updated',
         message: `Your payment of $${existing.amount.toFixed(2)} has been marked as ${data.status.toLowerCase()}`,
-        link: '/dashboard/lease',
+        link: '/dashboard/payments',
         userId: existing.lease.tenantId,
         organizationId: existing.organizationId,
       })

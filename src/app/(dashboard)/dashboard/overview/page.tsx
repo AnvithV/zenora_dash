@@ -66,7 +66,7 @@ function TenantDashboard() {
     <div className="space-y-8">
       {/* Current Lease */}
       <section>
-        <SectionHeader title="Your Lease" action={activeLease ? { label: 'View Details', href: '/dashboard/leases' } : undefined} />
+        <SectionHeader title="Your Lease" action={activeLease ? { label: 'View Details', href: '/dashboard/lease' } : undefined} />
         <div className="mt-3 rounded-xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {activeLease ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -234,7 +234,7 @@ function OwnerDashboard() {
       {/* Properties list */}
       {properties?.items?.length > 0 && (
         <section>
-          <SectionHeader title="Your Properties" action={{ label: 'View All', href: '/dashboard/properties' }} />
+          <SectionHeader title="Your Properties" />
           <div className="mt-3 rounded-xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {properties.items.map((prop: Record<string, unknown>) => (

@@ -50,7 +50,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         type: 'role_changed',
         title: 'Role Updated',
         message: `Your role has been changed to ${data.role}`,
-        link: '/profile',
+        link: '/dashboard/profile',
         userId: id,
         organizationId: orgId,
       })
@@ -63,7 +63,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           type: 'account_approved',
           title: 'Account Approved',
           message: 'Your account has been approved. You can now access the platform.',
-          link: '/dashboard',
+          link: '/dashboard/overview',
           userId: id,
           organizationId: orgId,
         })

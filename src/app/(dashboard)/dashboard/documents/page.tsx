@@ -19,7 +19,7 @@ export default function UserDocumentsPage() {
 
   // Admin-assigned documents (shared with this user)
   const { data: sharedData, isLoading: sharedLoading } = useUserDocuments()
-  const sharedDocuments = (sharedData?.data ?? []) as Array<{
+  const sharedDocuments = (sharedData?.items ?? []) as Array<{
     id: string
     name: string
     description?: string
