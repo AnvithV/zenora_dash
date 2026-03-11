@@ -65,6 +65,9 @@ export default function UserDetailPage() {
   const [editEmail, setEditEmail] = useState('')
   const [editPhone, setEditPhone] = useState('')
 
+  // Fetch landlords list for tenant assignment dropdown — must be before early returns
+  const { data: landlordsData } = useUsers({ role: 'LANDLORD', pageSize: 100 })
+
   if (isLoading) return <LoadingSkeleton />
 
   if (!data?.data) {
@@ -85,9 +88,6 @@ export default function UserDetailPage() {
   const user = data.data
   const isLandlord = user.role === 'LANDLORD'
   const isTenant = user.role === 'TENANT'
-
-  // Fetch landlords list for tenant assignment dropdown
-  const { data: landlordsData } = useUsers({ role: 'LANDLORD', pageSize: 100 })
   const hasLeases = user.leases?.length > 0
   const hasMaintenanceRequests = user.maintenanceRequests?.length > 0
   const hasOwnedProperties = user.ownedProperties?.length > 0
