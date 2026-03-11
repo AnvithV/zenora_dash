@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
-import { FileText, Wrench, Bell, Building2, ArrowRight } from 'lucide-react'
+import { FileText, Wrench, Bell, Building2, ArrowRight, DollarSign, AlertTriangle } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { getStatusColor, getRoleLabel } from '@/lib/auth-utils'
 import { fetchApi } from '@/lib/api-client'
@@ -38,10 +38,16 @@ function TenantDashboard() {
     queryKey: ['my-announcements'],
     queryFn: () => fetchApi('/api/announcements'),
   })
+  const { data: payments, isLoading: paymentsLoading } = useQuery({
+    queryKey: ['my-payments-overview'],
+    queryFn: () => fetchApi('/api/tenant/payments?pageSize=1'),
+  })
 
-  const isLoading = leasesLoading || maintenanceLoading || announcementsLoading
+  const isLoading = leasesLoading || maintenanceLoading || announcementsLoading || paymentsLoading
   const activeLease = leases?.items?.find((l: Record<string, unknown>) => l.status === 'ACTIVE')
   const openRequests = maintenance?.items?.filter((r: Record<string, unknown>) => r.status === 'OPEN' || r.status === 'IN_PROGRESS') ?? []
+  const paymentStats = payments?.stats ?? { totalDue: 0, totalPaid: 0, nextPayment: null }
+  const hasOverdue = (payments?.items ?? []).some((p: Record<string, unknown>) => p.status === 'PENDING' && !p.paidAt && new Date(p.dueDate as string) < new Date())
 
   if (isLoading) {
     return (
@@ -90,7 +96,28 @@ function TenantDashboard() {
       {/* Quick Stats */}
       <section>
         <SectionHeader title="Quick Access" />
-        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3 stagger-children">
+        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger-children">
+          <Link href="/dashboard/payments" className="group rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all duration-200 hover:border-violet-200 hover:shadow-md hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-violet-800">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400">
+                <DollarSign className="h-5 w-5" />
+              </div>
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Upcoming Payment</h3>
+            </div>
+            {paymentStats.nextPayment ? (
+              <>
+                <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-slate-100">{formatCurrency(paymentStats.nextPayment.amount)}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">due {formatDate(paymentStats.nextPayment.dueDate)}</p>
+              </>
+            ) : (
+              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">No upcoming payments</p>
+            )}
+            {hasOverdue && (
+              <div className="mt-2 flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400">
+                <AlertTriangle className="h-3.5 w-3.5" /> Overdue payment
+              </div>
+            )}
+          </Link>
           <Link href="/dashboard/maintenance" className="group rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all duration-200 hover:border-violet-200 hover:shadow-md hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-violet-800">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">

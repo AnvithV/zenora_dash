@@ -18,6 +18,7 @@ export const landlordNavItems = [
 
 export const userNavItems = [
   { label: 'Overview', href: '/dashboard/overview', icon: LayoutDashboard },
+  { label: 'Payments', href: '/dashboard/payments', icon: DollarSign },
   { label: 'Messages', href: '/dashboard/messages', icon: MessageSquare },
   { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
   { label: 'Maintenance', href: '/dashboard/maintenance', icon: Wrench },
